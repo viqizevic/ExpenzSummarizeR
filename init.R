@@ -4,7 +4,6 @@ library(janitor)
 library(formattable)
 
 # Set a few color variables to get more visually appealing
-customGreen0 = "#DeF7E9"
 customGreen = "#71CA97"
 customRed = "#ff7f7f"
 
@@ -14,12 +13,16 @@ improvement_formatter <- formatter("span", style = x ~ style(
                  ifelse(x < 0, customRed, "black")))
 )
 
+categories <- read_csv("categories.csv")
+
 # Reader function
 readTransactionsFile <- function(folder="files", filename, acc,
                                  dateformat="%Y-%m-%d") {
   file <- paste(folder, filename, sep="/") 
   read_excel(file) %>% as_tibble %>% clean_names %>%
+    left_join(categories, by = "category") %>% 
     mutate(
+      category = ifelse(is.na(preferred), category, preferred),
       dtmn = strptime(date,format=dateformat),
       value = income+expense,
       date = dtmn
@@ -41,3 +44,5 @@ tb_lbbamzn <- readTransactionsFile(filename="KKB-Umsaetze.xlsx", acc="LBB Amazon
 
 # Combine as one tibble
 tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn)
+
+# tb %>% count(category)
