@@ -22,14 +22,15 @@ createSummary <- function(datain, yr) {
     pivot_wider(names_from = month, values_from = sum, values_fill = 0) %>% 
     mutate(Average = round(Total/nmonths, digits = 2)) %>% 
     arrange(category)
-  # Order by freq and amount
-  tball2$freq <- frq$n
+  # Order by Freq and amount
+  tball2$Freq <- frq$n
   maxavg <- max(tball2$Average)
   tball3 <- tball2 %>%
-    mutate(order = ifelse(category != "Total", sign(freq-nmonths)*2*maxavg + Average, -100*maxavg)) %>% 
+    #mutate(order = ifelse(category != "Total", sign(Freq-nmonths+2)*2*maxavg + Average, -100*maxavg)) %>% 
+    mutate(order = ifelse(category != "Total", Average, -100*maxavg)) %>% 
     arrange(-order) %>% 
     rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
-    select(-freq, -order)
+    select(-order)
   # Display formatted table
   alignments <- c("l", rep(c("r"),times=nmonths+2))
   formattable(tball3, align=alignments, list(
@@ -38,4 +39,4 @@ createSummary <- function(datain, yr) {
   ))
 }
 
-createSummary(datain = tb, yr = "2020")
+createSummary(datain = tb, yr = "2021")

@@ -17,7 +17,7 @@ categories <- read_csv("categories.csv")
 
 # Reader function
 readTransactionsFile <- function(folder="files", filename, acc,
-                                 dateformat="%Y-%m-%d") {
+                                 dateformat="%d.%m.%Y") {
   file <- paste(folder, filename, sep="/") 
   read_excel(file) %>% as_tibble %>% clean_names %>%
     left_join(categories, by = "category") %>% 
@@ -37,12 +37,16 @@ readTransactionsFile <- function(folder="files", filename, acc,
 }
 
 # Read data
-datef_de <- "%d.%m.%Y"
-tb_barclay <- readTransactionsFile(filename="Umsaetze_BC.xlsx", acc="Barclays", dateformat=datef_de)
-tb_n26 <- readTransactionsFile(filename="N26-transactions.xlsx", acc="N26")
-tb_lbbamzn <- readTransactionsFile(filename="KKB-Umsaetze.xlsx", acc="LBB Amazon", dateformat=datef_de)
+tb_barclay <- readTransactionsFile(filename="Umsaetze_BC.xlsx", acc="Barclays")
+tb_n26 <- readTransactionsFile(filename="N26-transactions.xlsx", acc="N26", dateformat="%Y-%m-%d")
+tb_lbbamzn <- readTransactionsFile(filename="KKB-Umsaetze.xlsx", acc="LBB Amazon")
+tb_ingdiba <- readTransactionsFile(filename="Umsatzanzeige_ING.xlsx", acc="ING DiBa")
+tb_commrzb <- readTransactionsFile(filename="Umsaetze_CMZB.xlsx", acc="Commerzbank")
+tb_trfwise <- readTransactionsFile(filename="Statement_Wise.xlsx", acc="Wise", dateformat="%d-%m-%Y")
+tb_deutscb <- readTransactionsFile(filename="Kontoumsaetze_DB.xlsx", acc="Deutsche Bank")
 
 # Combine as one tibble
-tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn)
+tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, tb_trfwise, tb_deutscb)
 
-# tb %>% count(category)
+ctg <- tb %>% count(category)
+# tb %>% count(year, account)
