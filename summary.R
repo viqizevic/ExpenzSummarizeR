@@ -1,10 +1,13 @@
 # Create Summary
 
 # Sub-function to get balance at the end of the year
-get_end_balance <- function(datain, yr) {
+get_end_balance <- function(datain, yr, mnth=12) {
   stopifnot(all(grepl("\\d{4}", datain$year)))
   stopifnot(!is.na(datain$value))
-  datain %>% filter(as.numeric(year) <= yr) %>% .$value %>% sum
+  stopifnot(1 <= mnth & mnth <= 12)
+  firstday <- as_date(paste(yr, mnth, 1, sep = "-"))
+  lastday <- update(firstday, mday=days_in_month(firstday))
+  datain %>% filter(date <= lastday) %>% .$value %>% sum
 }
 
 # Main function to create the summary
@@ -37,15 +40,17 @@ createSummary <- function(datain, yr) {
   tbsaldo <- tball1sum %>% filter(category == "Saldo")
   # Get monthly saldo
   saldos <- tbsaldo %>% .$sum %>% cumsum
-  # Last one is total, same as saldo in the last month
-  saldos[length(saldos)] <- saldos[length(saldos)-1]
   # Add the end of year before saldo
   tbsaldo$sum <- saldos + get_end_balance(datain, as.numeric(yr)-1)
-  tball1saldo <- rbind(tball1sum %>% filter(category != "Saldo"), tbsaldo)
+  tball1saldo <- rbind(tball1sum %>% filter(category != "Saldo"), tbsaldo) %>% 
+    mutate(sumc = if_else(sum != 0, sprintf("%.2f",sum), ""))
   
-  tball2 <- tball1saldo %>% select(-year_month) %>% 
-    pivot_wider(names_from = month, values_from = sum, values_fill = 0) %>% 
-    mutate(Average = round(Total/nmonths, digits = 2)) %>% 
+  tball2 <- tball1saldo %>% select(-year_month, -sum) %>% 
+    pivot_wider(names_from = month, values_from = sumc, values_fill = "") %>% 
+    mutate(
+      Total = if_else(Total == "", "0.00", Total),
+      Average = round(as.numeric(Total)/nmonths, digits = 2)
+    ) %>% 
     arrange(category)
   # Order by Freq and amount
   tball2$Freq <- frq$n
@@ -53,7 +58,8 @@ createSummary <- function(datain, yr) {
   tball3 <- tball2 %>%
     mutate(
       order = ifelse(category %in% c("Total","Saldo"), -100*maxavg-Average, Average),
-      Average = ifelse(category == "Saldo", NA, Average)
+      Total = ifelse(category == "Saldo", "", Total),
+      Average = ifelse(category == "Saldo", "", Average)
     ) %>% 
     arrange(-order) %>% 
     rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
