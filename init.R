@@ -19,12 +19,16 @@ categories <- read_csv("categories.csv", show_col_types = FALSE)
 # Check function for valid income and expense values
 checkIncomeAndExpense <- function(datain) {
   ds <- datain %>% mutate(
-    navalue = is.na(income) | is.na(expense),  
-    inexpvalue = (income != 0 & expense != 0)
+    navalue = (is.na(income) | is.na(expense)),  
+    inexpvalue = (income != 0 & expense != 0),
+    wrongincome = (income < 0),
+    wrongexpense = (expense > 0)
   )
   if(any(ds$navalue)) warning("Unexpected missing income or expense.", immediate. = TRUE)
   if(any(ds$inexpvalue)) warning("Unexpected both income and expense value given.", immediate. = TRUE)
-  ds %>% filter(navalue | inexpvalue)
+  if(any(ds$wrongincome)) warning("Unexpected income < 0.", immediate. = TRUE)
+  if(any(ds$wrongexpense)) warning("Unexpected expense > 0.", immediate. = TRUE)
+  ds %>% filter(navalue | inexpvalue | wrongincome | wrongexpense)
 }
 
 # Reader function
@@ -59,9 +63,11 @@ tb_commrzb <- readTransactionsFile(filename="Umsaetze_CMZB.xlsx", acc="Commerzba
 tb_trfwise <- readTransactionsFile(filename="Statement_Wise.xlsx", acc="Wise", dateformat="%d-%m-%Y")
 tb_deutscb <- readTransactionsFile(filename="Kontoumsaetze_DB.xlsx", acc="Deutsche Bank")
 tb_wstnrot <- readTransactionsFile(filename="Umsaetze_WSTR.xlsx", acc="Wüstenrot")
+tb_mintos  <- readTransactionsFile(filename="Mintos-transactions.xlsx", acc="Mintos", dateformat="%Y-%m-%d")
 
 # Combine as one tibble
-tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, tb_trfwise, tb_deutscb, tb_wstnrot)
+tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, 
+            tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
 
 ctg <- tb %>% count(category)
-# tb %>% count(year, account)
+# tb %>% count(year, account) %>% formattable

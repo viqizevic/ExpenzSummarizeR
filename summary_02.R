@@ -11,7 +11,7 @@ get_end_balance <- function(datain, yr, mnth=12) {
 }
 
 # Main function to create the summary
-createSummary <- function(datain, yr) {
+createSummary02 <- function(datain, yr) {
   stopifnot(grepl("\\d{4}", yr))
   
   tb0 <- datain %>% filter(year == yr)
@@ -30,10 +30,11 @@ createSummary <- function(datain, yr) {
   
   # Create total for the whole year
   tbyrtot <- tbcatsum2 %>% mutate(year_month = paste0(year,"-99"), month = "Total")
-  tball1 <- rbind(tbcatsum2, tbyrtot)
+  tball1 <- rbind(tbcatsum2, tbyrtot) %>% 
+    mutate(inout=if_else(value>=0, "In", "Out"))
   
   # Get the summary and transpose by months
-  tball1sum <- tball1 %>% group_by(year_month, month, category) %>% 
+  tball1sum <- tball1 %>% group_by(year_month, month, inout, category) %>% 
     summarise(sum = sum(value)) %>% ungroup()
   
   # Get saldo from total
@@ -43,25 +44,30 @@ createSummary <- function(datain, yr) {
   # Add the end of year before saldo
   tbsaldo$sum <- saldos + get_end_balance(datain, as.numeric(yr)-1)
   tball1saldo <- rbind(tball1sum %>% filter(category != "Saldo"), tbsaldo) %>% 
-    mutate(sumc = if_else(sum != 0, sprintf("%.2f",sum), ""))
-  
-  tball2 <- tball1saldo %>% select(-year_month, -sum) %>% 
-    pivot_wider(names_from = month, values_from = sumc, values_fill = "") %>% 
     mutate(
-      Total = if_else(Total == "", "0.00", Total),
-      Average = round(as.numeric(Total)/nmonths, digits = 2)
+      sumc = if_else(sum != 0, sprintf("%.2f",sum), ""),
+      collbl = paste(month, inout, sep='_')
+    )
+  
+  tball2 <- tball1saldo %>% select(-year_month, -month, -inout, -sum) %>% 
+    pivot_wider(names_from = collbl, values_from = sumc, values_fill = "") %>% 
+    mutate(
+      Total_In  = if_else( Total_In == "", "0.00", Total_In),
+      Total_Out = if_else(Total_Out == "", "0.00", Total_Out),
+      Total = as.numeric(Total_In)+as.numeric(Total_Out),
+      Average = round(Total/nmonths, digits = 2)
     ) %>% 
     arrange(category)
   # Order by Freq and amount
   tball2$Freq <- frq$n
-  maxavg <- max(abs(tball2$Average))
+  maxavg <- max(tball2$Average)
   tball3 <- tball2 %>%
     mutate(
-      order = ifelse(Average < 0, -maxavg-(Freq*Average), Average),
-      order = ifelse(Average < 0 & 9 <= Freq, (-maxavg-Average)/10, order),
-      order = ifelse(category %in% c("Total","Saldo"), -100*maxavg-Average, order),
+      order = ifelse(category %in% c("Total","Saldo"), -100*maxavg-Average, Average),
+      Total_In = ifelse(category == "Saldo", "", Total_In),
+      Total_Out = ifelse(category == "Saldo", "", Total_Out),
       Total = ifelse(category == "Saldo", "", Total),
-      Average = ifelse(category == "Saldo", "", sprintf("%.2f",Average))
+      Average = ifelse(category == "Saldo", "", Average)
     ) %>% 
     arrange(-order) %>% 
     rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
@@ -72,6 +78,7 @@ createSummary <- function(datain, yr) {
     'Total' = improvement_formatter,
     'Average' = improvement_formatter
   ))
+  #tball1sum %>% count(category, inout) %>% count(category) %>% filter(n == 2) %>% formattable()
 }
 
-createSummary(datain = tb, yr = "2021")
+createSummary02(datain = tb, yr = "2021")
