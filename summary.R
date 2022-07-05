@@ -74,4 +74,4 @@ createSummary <- function(datain, yr) {
   ))
 }
 
-createSummary(datain = tb, yr = "2021")
+createSummary(datain = tb, yr = "2022")

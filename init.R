@@ -1,3 +1,6 @@
+rm(list = ls())
+setwd(getwd())
+
 library(tidyverse)
 library(readxl)
 library(janitor)
@@ -43,6 +46,7 @@ readTransactionsFile <- function(folder="files", filename, acc,
       date = dtmn
     )
   if(any(is.na(exl$date))) warning("Failed to get dates. Please check format.", immediate. = TRUE)
+  if(any(is.na(exl$category)|exl$category %in% c("","0"))) warning("Found blank category. Please check.", immediate. = TRUE)
   checkIncomeAndExpense(exl)
   exl %>% select(date, payee, memo, income, expense, category) %>% 
     mutate(
@@ -70,4 +74,5 @@ tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb,
             tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
 
 ctg <- tb %>% count(category)
+# ctg %>% arrange(n) %>% formattable
 # tb %>% count(year, account) %>% formattable

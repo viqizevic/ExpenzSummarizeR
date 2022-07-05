@@ -11,4 +11,4 @@ createListing <- function(datain, yr="all") {
     formattable(list('value' = improvement_formatter))
 }
 
-createListing(datain = tb, yr="2021")
+createListing(datain = tb, yr="2022")

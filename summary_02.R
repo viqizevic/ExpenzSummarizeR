@@ -81,4 +81,4 @@ createSummary02 <- function(datain, yr) {
   #tball1sum %>% count(category, inout) %>% count(category) %>% filter(n == 2) %>% formattable()
 }
 
-createSummary02(datain = tb, yr = "2021")
+createSummary02(datain = tb, yr = "2022")
