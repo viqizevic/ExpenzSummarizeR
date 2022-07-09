@@ -1,5 +1,5 @@
 rm(list = ls())
-setwd(getwd())
+setwd("~/Documents/rstudio/ExpenzSummarizeR")
 
 library(tidyverse)
 library(readxl)
