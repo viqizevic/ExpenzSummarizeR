@@ -1,5 +1,4 @@
 rm(list = ls())
-setwd("~/Documents/rstudio/ExpenzSummarizeR")
 
 library(tidyverse)
 library(readxl)
@@ -70,9 +69,32 @@ tb_wstnrot <- readTransactionsFile(filename="Umsaetze_WSTR.xlsx", acc="Wüstenro
 tb_mintos  <- readTransactionsFile(filename="Mintos-transactions.xlsx", acc="Mintos", dateformat="%Y-%m-%d")
 
 # Combine as one tibble
-tb <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, 
+tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, 
             tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
 
-ctg <- tb %>% count(category)
+ctg <- tb0 %>% count(category)
 # ctg %>% arrange(n) %>% formattable
-# tb %>% count(year, account) %>% formattable
+# tb0 %>% count(year, account) %>% formattable
+
+sc_file <- paste("files", "set_categories.xlsx", sep="/") 
+sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
+
+suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>% 
+  select(-"category", -"year", -"year_month", -"month", -"income", -"expense") %>% 
+  mutate(
+    detect_payee = str_detect(payee, payee_pattern),
+    no_payee_pattern = is.na(payee_pattern),
+    detect_memo = str_detect(memo, memo_pattern),
+    no_memo_pattern = is.na(memo_pattern)
+  ) %>% filter(detect_payee | no_payee_pattern, detect_memo | no_memo_pattern)
+suggcats <- suggcats0 %>% select(date, payee, memo, account, value, suggested_category)
+tb <- tb0 %>% left_join(suggcats)
+
+# Check if any duplicates created
+duplsgcats <- suggcats0 %>% count(date, payee, memo, account, value) %>% filter(n!=1)
+if(nrow(duplsgcats) > 0) {
+  warning("Duplicates found. Please check.", immediate. = TRUE)
+  duplsgcats %>% formattable()
+}
+
+
