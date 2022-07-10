@@ -85,8 +85,18 @@ suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
     detect_payee = str_detect(payee, payee_pattern),
     no_payee_pattern = is.na(payee_pattern),
     detect_memo = str_detect(memo, memo_pattern),
-    no_memo_pattern = is.na(memo_pattern)
-  ) %>% filter(detect_payee | no_payee_pattern, detect_memo | no_memo_pattern)
+    no_memo_pattern = is.na(memo_pattern),
+    detect_account = str_detect(account, account_pattern),
+    no_account_pattern = is.na(account_pattern)
+  ) %>% filter(
+    detect_payee | no_payee_pattern,
+    detect_memo | no_memo_pattern,
+    detect_account | no_account_pattern
+  ) %>% 
+  left_join(categories, by=c("suggested_category"="category")) %>% 
+  mutate(
+    suggested_category = ifelse(is.na(preferred), suggested_category, preferred),
+  )
 suggcats <- suggcats0 %>% select(date, payee, memo, account, value, suggested_category)
 tb <- tb0 %>% left_join(suggcats)
 
@@ -96,5 +106,12 @@ if(nrow(duplsgcats) > 0) {
   warning("Duplicates found. Please check.", immediate. = TRUE)
   duplsgcats %>% formattable()
 }
+tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
+  count(payee, memo, account, value, category, suggested_category) %>% formattable()
+
+tb %>% count(payee, memo, account, category, suggested_category) %>% 
+  filter(is.na(suggested_category), n==1) %>% formattable()
 
 
+# tb %>% filter(grepl("Ihre",payee)) %>% formattable()
+# tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
