@@ -14,11 +14,15 @@ get_end_balance <- function(datain, yr, mnth=12) {
 createSummary <- function(datain, yr) {
   stopifnot(grepl("\\d{4}", yr))
   
+  blankcat <- datain %>% filter(is.na(category))
+  if(nrow(blankcat)>0) warning("Found obs with blank category, will be ignored.", immediate. = TRUE)
+  datain <- datain %>% filter(!is.na(category))
+  
   tb0 <- datain %>% filter(year == yr)
   # Get number of months (for average calculation)
   countmonths <- tb0 %>% count(month)
   nmonths <- length(countmonths$month)
-
+  
   # Create total category
   tbcatsum1 <- tb0 %>% mutate(category = "Total")
   tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
