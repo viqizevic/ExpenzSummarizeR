@@ -44,8 +44,15 @@ readTransactionsFile <- function(folder="files", filename, acc,
       dtmn = strptime(date,format=dateformat),
       date = dtmn
     )
+  # Add IBAN if RINP transfer of Deutsche Bank
+  if(acc=="Deutsche Bank") {
+    exl <- exl %>% mutate(
+      payee = ifelse(is.na(payee), umsatzart, payee),
+      memo = ifelse(grepl("Vicky",payee,ignore.case=TRUE) & grepl("RINP",memo),
+                    paste(memo,iban), memo)
+    )
+  }
   if(any(is.na(exl$date))) warning("Failed to get dates. Please check format.", immediate. = TRUE)
-  if(any(is.na(exl$category)|exl$category %in% c("","0"))) warning("Found blank category. Please check.", immediate. = TRUE)
   checkIncomeAndExpense(exl)
   exl %>% select(date, payee, memo, income, expense, category) %>% 
     mutate(
@@ -79,6 +86,7 @@ ctg <- tb0 %>% count(category)
 sc_file <- paste("files", "set_categories.xlsx", sep="/") 
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
 
+# Get suggested categories
 suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>% 
   select(-"category", -"year", -"year_month", -"month", -"income", -"expense") %>% 
   mutate(
@@ -86,11 +94,14 @@ suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
     no_payee_pattern = is.na(payee_pattern),
     detect_memo = str_detect(memo, memo_pattern),
     no_memo_pattern = is.na(memo_pattern),
+    detect_exp_flag = (exp_flag=="Y" & value<0) | (exp_flag=="N" & value>0),
+    no_expense_flag = is.na(exp_flag),
     detect_account = str_detect(account, account_pattern),
     no_account_pattern = is.na(account_pattern)
   ) %>% filter(
     detect_payee | no_payee_pattern,
     detect_memo | no_memo_pattern,
+    detect_exp_flag | no_expense_flag,
     detect_account | no_account_pattern
   ) %>% 
   left_join(categories, by=c("suggested_category"="category")) %>% 
@@ -98,7 +109,10 @@ suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
     suggested_category = ifelse(is.na(preferred), suggested_category, preferred),
   )
 suggcats <- suggcats0 %>% select(date, payee, memo, account, value, suggested_category)
-tb <- tb0 %>% left_join(suggcats)
+tb1 <- tb0 %>% left_join(suggcats)
+tb <- tb1 %>% mutate(
+  category=ifelse(!is.na(category),category, suggested_category)
+)
 
 # Check if any duplicates created
 duplsgcats <- suggcats0 %>% count(date, payee, memo, account, value) %>% filter(n!=1)
@@ -106,12 +120,21 @@ if(nrow(duplsgcats) > 0) {
   warning("Duplicates found. Please check.", immediate. = TRUE)
   duplsgcats %>% formattable()
 }
+
+# Display where suggested category not same as available one
 tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
   count(payee, memo, account, value, category, suggested_category) %>% formattable()
 
 tb %>% count(payee, memo, account, category, suggested_category) %>% 
   filter(is.na(suggested_category), n==1) %>% formattable()
 
-
+misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
+if(nrow(misscats) > 0) {
+  warning("Found blank category. Please check.", immediate. = TRUE) 
+  misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
+}
 # tb %>% filter(grepl("Ihre",payee)) %>% formattable()
 # tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
+
+# Print used suggested categories
+# tb1 %>% filter(is.na(category)) %>% count(payee, suggested_category) %>% formattable()
