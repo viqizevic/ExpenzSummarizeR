@@ -121,20 +121,26 @@ if(nrow(duplsgcats) > 0) {
   duplsgcats %>% formattable()
 }
 
-# Display where suggested category not same as available one
-tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
-  count(payee, memo, account, value, category, suggested_category) %>% formattable()
-
-tb %>% count(payee, memo, account, category, suggested_category) %>% 
-  filter(is.na(suggested_category), n==1) %>% formattable()
 
 misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
 if(nrow(misscats) > 0) {
   warning("Found blank category. Please check.", immediate. = TRUE) 
   misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
 }
-# tb %>% filter(grepl("Ihre",payee)) %>% formattable()
-# tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
 
-# Print used suggested categories
-# tb1 %>% filter(is.na(category)) %>% count(payee, suggested_category) %>% formattable()
+
+.check <- function() {
+  
+  # Display where suggested category not same as available one
+  tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
+    count(payee, memo, account, value, category, suggested_category) %>% formattable()
+  
+  tb %>% count(payee, memo, account, category, suggested_category) %>% 
+    filter(is.na(suggested_category), n>1) %>% formattable()
+  
+  tb %>% filter(grepl("Ihre",payee)) %>% formattable()
+  tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
+  
+  # Print used suggested categories
+  tb1 %>% filter(is.na(category)) %>% count(payee, memo, suggested_category) %>% formattable()
+}
