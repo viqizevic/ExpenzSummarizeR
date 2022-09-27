@@ -34,7 +34,7 @@ checkIncomeAndExpense <- function(datain) {
 }
 
 # Reader function
-readTransactionsFile <- function(folder="files", filename, acc,
+readTransactionsFile <- function(folder="data", filename, acc,
                                  dateformat="%d.%m.%Y") {
   file <- paste(folder, filename, sep="/") 
   exl <- read_excel(file) %>% as_tibble %>% clean_names %>% 
@@ -83,7 +83,7 @@ ctg <- tb0 %>% count(category)
 # ctg %>% arrange(n) %>% formattable
 # tb0 %>% count(year, account) %>% formattable
 
-sc_file <- paste("files", "set_categories.xlsx", sep="/") 
+sc_file <- paste("data", "set_categories.xlsx", sep="/") 
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
 
 # Get suggested categories
@@ -125,8 +125,8 @@ if(nrow(duplsgcats) > 0) {
 misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
 if(nrow(misscats) > 0) {
   warning("Found blank category. Please check.", immediate. = TRUE) 
-  misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
 }
+misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
 
 
 .check <- function() {
@@ -140,7 +140,10 @@ if(nrow(misscats) > 0) {
   
   tb %>% filter(grepl("Ihre",payee)) %>% formattable()
   tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
+  tb %>% filter(grepl("Reisev",category)) %>% formattable()
+  tb %>% filter(grepl("VIYU",memo)) %>% formattable()
   
   # Print used suggested categories
   tb1 %>% filter(is.na(category)) %>% count(payee, memo, suggested_category) %>% formattable()
 }
+
