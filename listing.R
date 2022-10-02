@@ -16,7 +16,3 @@ printListing <- function(datain, yr="all") {
 }
 
 printListing(datain = tb, yr="2022")
-
-
-# Save cache data for Shiny
-createListing(tb) %>% write_csv("cache/listing.csv")

@@ -1,8 +1,10 @@
 library("tidyverse")
 library("DT")
 
+source("listing.R")
 
-listing <- read_csv("cache/listing.csv") %>% 
+
+listingData <- read_csv("cache/listing.csv") %>% 
   arrange(date) %>% 
   mutate(
     date = as.Date(date)
@@ -11,7 +13,7 @@ listing <- read_csv("cache/listing.csv") %>%
 function(input, output, session) {
   
   output$data_table <- renderDT({
-    listing %>% datatable()
+    createListing(listingData) %>% datatable()
   })
   
 }

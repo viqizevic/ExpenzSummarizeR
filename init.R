@@ -48,7 +48,7 @@ readTransactionsFile <- function(folder="data", filename, acc,
   if(acc=="Deutsche Bank") {
     exl <- exl %>% mutate(
       payee = ifelse(is.na(payee), umsatzart, payee),
-      memo = ifelse(grepl("Vicky",payee,ignore.case=TRUE) & grepl("RINP",memo),
+      memo = ifelse(grepl("Vicky",payee,ignore.case=TRUE) & (grepl("RINP",memo) | memo=="-"),
                     paste(memo,iban), memo)
     )
   }
@@ -127,6 +127,10 @@ if(nrow(misscats) > 0) {
   warning("Found blank category. Please check.", immediate. = TRUE) 
 }
 misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
+
+
+# Save cache data for Shiny
+tb %>% write_csv("cache/listing.csv")
 
 
 .check <- function() {
