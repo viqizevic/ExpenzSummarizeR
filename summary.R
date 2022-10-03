@@ -70,12 +70,16 @@ createSummary <- function(datain, yr) {
     arrange(-order) %>% 
     rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
     select(-order)
+}
+
+printSummary <- function(datain, yr) {
+  tball <- createSummary(datain, yr)
   # Display formatted table
-  alignments <- c("l", rep(c("r"),times=nmonths+2))
-  formattable(tball3, align=alignments, list(
+  alignments <- c("l", rep(c("r"),times=ncol(tball)-2))
+  formattable(tball, align=alignments, list(
     'Total' = improvement_formatter,
     'Average' = improvement_formatter
   ))
 }
 
-createSummary(datain = tb, yr = "2022")
+printSummary(datain = tb, yr = "2022")
