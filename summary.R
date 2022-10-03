@@ -61,8 +61,8 @@ createSummary <- function(datain, yr) {
   maxavg <- max(abs(tball2$Average))
   tball3 <- tball2 %>%
     mutate(
-      order = ifelse(Average < 0, -maxavg-(Freq*Average), Average),
-      order = ifelse(Average < 0 & 9 <= Freq, (-maxavg-Average)/10, order),
+      order = ifelse(Average < 0, -maxavg-Average, Average),
+      order = ifelse(Average < 0 & 7 <= Freq, (-maxavg-Average)/10, order),
       order = ifelse(category %in% c("Total","Saldo"), -100*maxavg-Average, order),
       Total = ifelse(category == "Saldo", "", Total),
       Average = ifelse(category == "Saldo", "", sprintf("%.2f",Average))
