@@ -1,13 +1,32 @@
 # Create Summary
 
 # Sub-function to get balance at the end of the year
-get_end_balance <- function(datain, yr, mnth=12) {
+get_end_balance <- function(datain, yr, mnth=12, acc="") {
+  if (acc != "") {
+    datain <- datain %>% filter(account==acc)
+  }
   stopifnot(all(grepl("\\d{4}", datain$year)))
   stopifnot(!is.na(datain$value))
   stopifnot(1 <= mnth & mnth <= 12)
   firstday <- as_date(paste(yr, mnth, 1, sep = "-"))
   lastday <- update(firstday, mday=days_in_month(firstday))
   datain %>% filter(date <= lastday) %>% .$value %>% sum
+}
+
+# Sub-function to get saldo at each month
+get_monthly_saldo <- function(datasum, datain, yr, mnth=12) {
+  dssaldo <- datasum %>% 
+    filter(str_starts(category,"Saldo"), month!="Total")
+  accs <- dssaldo %>% count(category) %>% pull(category)
+  for (acc in accs) {
+    account <- gsub("Saldo\\s*","",acc)
+    dssaldo1 <- dssaldo %>% filter(category==acc)
+    saldos <- dssaldo1 %>% .$sum %>% cumsum
+    dssaldo1$csum <- saldos + get_end_balance(datain, as.numeric(yr)-1, 12, account)
+    dssaldo <- dssaldo %>% left_join(dssaldo1) %>% 
+      mutate(sum=if_else(!is.na(csum),csum,sum)) %>% select(-csum)
+  }
+  dssaldo
 }
 
 # Main function to create the summary
@@ -26,7 +45,8 @@ createSummary <- function(datain, yr) {
   # Create total category
   tbcatsum1 <- tb0 %>% mutate(category = "Total")
   tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
-  tbcatsum2 <- rbind(tb0, tbcatsum1, tbsaldo0)
+  tbsaldo1 <- tbsaldo0 %>% mutate(category = paste(category,account))
+  tbcatsum2 <- rbind(tb0, tbcatsum1, tbsaldo0, tbsaldo1)
   
   # Get frequency counts
   frq <- tbcatsum2 %>% count(category, month) %>%
@@ -40,13 +60,10 @@ createSummary <- function(datain, yr) {
   tball1sum <- tball1 %>% group_by(year_month, month, category) %>% 
     summarise(sum = sum(value)) %>% ungroup()
   
-  # Get saldo from total
-  tbsaldo <- tball1sum %>% filter(category == "Saldo")
   # Get monthly saldo
-  saldos <- tbsaldo %>% .$sum %>% cumsum
-  # Add the end of year before saldo
-  tbsaldo$sum <- saldos + get_end_balance(datain, as.numeric(yr)-1)
-  tball1saldo <- rbind(tball1sum %>% filter(category != "Saldo"), tbsaldo) %>% 
+  tbsaldo <- get_monthly_saldo(tball1sum, datain, yr, nmonths)
+  
+  tball1saldo <- rbind(tball1sum %>% filter(!str_starts(category,"Saldo")), tbsaldo) %>% 
     mutate(sumc = if_else(sum != 0, sprintf("%.2f",sum), ""))
   
   tball2 <- tball1saldo %>% select(-year_month, -sum) %>% 
