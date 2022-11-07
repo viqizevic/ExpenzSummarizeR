@@ -14,19 +14,25 @@ get_end_balance <- function(datain, yr, mnth=12, acc="") {
 }
 
 # Sub-function to get saldo at each month
-get_monthly_saldo <- function(datasum, datain, yr, mnth=12) {
+get_monthly_saldo <- function(datasum, datain, yr) {
   dssaldo <- datasum %>% 
     filter(str_starts(category,"Saldo"), month!="Total")
-  accs <- dssaldo %>% count(category) %>% pull(category)
-  for (acc in accs) {
+  accs <- dssaldo %>% count(category) %>% select(-n)
+  ym <- dssaldo %>% count(year_month, month) %>% select(-n)
+  # cross join to display all months and accounts
+  ymaccs <- ym %>% full_join(accs, by=character()) %>% 
+    left_join(dssaldo, by = c("year_month", "month", "category")) %>% 
+    mutate(sum=if_else(is.na(sum),0,sum))
+  for (acc in accs$category) {
     account <- gsub("Saldo\\s*","",acc)
-    dssaldo1 <- dssaldo %>% filter(category==acc)
+    dssaldo1 <- ymaccs %>% filter(category==acc)
     saldos <- dssaldo1 %>% .$sum %>% cumsum
     dssaldo1$csum <- saldos + get_end_balance(datain, as.numeric(yr)-1, 12, account)
-    dssaldo <- dssaldo %>% left_join(dssaldo1) %>% 
+    ymaccs <- ymaccs %>% 
+      left_join(dssaldo1, by = c("year_month", "month", "category", "sum")) %>% 
       mutate(sum=if_else(!is.na(csum),csum,sum)) %>% select(-csum)
   }
-  dssaldo
+  ymaccs
 }
 
 # Main function to create the summary
@@ -61,7 +67,7 @@ createSummary <- function(datain, yr) {
     summarise(sum = sum(value)) %>% ungroup()
   
   # Get monthly saldo
-  tbsaldo <- get_monthly_saldo(tball1sum, datain, yr, nmonths)
+  tbsaldo <- get_monthly_saldo(tball1sum, datain, yr)
   
   tball1saldo <- rbind(tball1sum %>% filter(!str_starts(category,"Saldo")), tbsaldo) %>% 
     mutate(sumc = if_else(sum != 0, sprintf("%.2f",sum), ""))
