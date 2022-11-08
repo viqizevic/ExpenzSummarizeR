@@ -86,9 +86,9 @@ createSummary <- function(datain, yr) {
     mutate(
       order = ifelse(Average < 0, -maxavg-Average, Average),
       order = ifelse(Average < 0 & 7 <= Freq, (-maxavg-Average)/10, order),
-      order = ifelse(category %in% c("Total","Saldo"), -100*maxavg-Average, order),
-      Total = ifelse(category == "Saldo", "", Total),
-      Average = ifelse(category == "Saldo", "", sprintf("%.2f",Average))
+      order = ifelse(grepl("Total|Saldo",category), -100*maxavg+abs(Average), order),
+      Total = ifelse(grepl("Saldo",category), "", Total),
+      Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average))
     ) %>% 
     arrange(-order) %>% 
     rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
