@@ -91,12 +91,13 @@ createSummary <- function(datain, yr) {
       Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average))
     ) %>% 
     arrange(-order) %>% 
-    rename_with(~ gsub("category", yr, .x, fixed = TRUE)) %>% 
+    rename(Category = category) %>% 
     select(-order)
 }
 
 printSummary <- function(datain, yr) {
-  tball <- createSummary(datain, yr)
+  tball <- createSummary(datain, yr) %>% 
+    rename_with(~ gsub("Category", yr, .x, fixed = TRUE))
   # Display formatted table
   alignments <- c("l", rep(c("r"),times=ncol(tball)-2))
   formattable(tball, align=alignments, list(
