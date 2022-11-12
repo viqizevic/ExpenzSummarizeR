@@ -27,16 +27,21 @@ get_data_for_chart <- function(datain, yr, expensefl="Y") {
   ds
 }
 
-year <- "2022"
-df <- get_data_for_chart(tb, year)
+create_pie_chart <- function(datain, year) {
+  df <- get_data_for_chart(datain, year)
+  
+  pie <- ggplot(df, aes(x = "", y=PRCT, fill = factor(Category))) + 
+    geom_bar(width = 1, stat = "identity") +
+    theme(axis.line = element_blank(), 
+          plot.title = element_text(hjust=0.5)) + 
+    labs(
+      fill="Category", 
+      x=NULL, 
+      y=NULL, 
+      title = year
+    )
+  
+  pie + coord_polar(theta = "y", start=0)
+}
 
-pie <- ggplot(df, aes(x = "", y=PRCT, fill = factor(Category))) + 
-  geom_bar(width = 1, stat = "identity") +
-  theme(axis.line = element_blank(), 
-        plot.title = element_text(hjust=0.5)) + 
-  labs(fill="Category", 
-       x=NULL, 
-       y=NULL, 
-       title=year)
-
-pie + coord_polar(theta = "y", start=0)
+create_pie_chart(tb,"2022")

@@ -1,7 +1,18 @@
 library("DT")
 
-fluidPage(
-  h1("Transactions"),
-  #wellPanel("Overall data"),
-  DTOutput("data_table")
+navbarPage(
+  "Transactions",
+  tabPanel(
+    "Listing",
+    fluidPage(
+      DTOutput("data_listing")
+    )
+  ),
+  tabPanel(
+    "Pie Chart",
+    fluidPage(
+      plotOutput("pie")
+    )
+  ),
+  collapsible = TRUE
 )
