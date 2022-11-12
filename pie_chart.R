@@ -20,9 +20,13 @@ get_data_for_chart <- function(datain, yr, expensefl="Y", threshold=2.5) {
   cats <- ds1$Category
   restpct <- 100 - (ds1$PRCT %>% sum)
   restaval <- totaval - (ds1$AVAL %>% sum)
-  catother <- paste("~Others", paste0("(",round(restpct,digits=1),"%)"))
-  cats <- append(cats, catother)
-  ds <- ds1 %>% add_row(Category=catother, AVAL=restaval, PRCT=restpct)
+  if (restpct > 0) {
+    catother <- paste("~Others", paste0("(",round(restpct,digits=1),"%)"))
+    cats <- append(cats, catother)
+    ds <- ds1 %>% add_row(Category=catother, AVAL=restaval, PRCT=restpct)
+  } else {
+    ds <- ds1
+  }
   ds$Category <- factor(ds$Category, levels = cats)
   ds
 }
@@ -37,8 +41,7 @@ create_pie_chart <- function(datain, year) {
     labs(
       fill="Category", 
       x=NULL, 
-      y=NULL, 
-      title = year
+      y=NULL
     )
   
   pie + coord_polar(theta = "y", start=0)

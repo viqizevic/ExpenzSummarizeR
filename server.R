@@ -14,10 +14,14 @@ listingData <- ds0 %>%
   mutate(
     date = as.Date(date)
   )
-
-year <- "2022"
+years <- unique(listingData$year) %>% sort(decreasing = TRUE)
 
 function(input, output, session) {
+  
+  updateSelectInput(session, "select_year_for_pie_chart",
+                    choices = years)
+  updateSelectInput(session, "select_year_for_bar_chart",
+                    choices = years)
   
   output$data_listing <- renderDT({
     createListing(listingData) %>% datatable()
@@ -25,11 +29,11 @@ function(input, output, session) {
   })
   
   output$pie <- renderPlot({
-    create_pie_chart(ds0,year)
+    create_pie_chart(ds0,input$select_year_for_pie_chart)
   })
 
   output$bar <- renderPlot({
-    create_bar_chart(ds0,year)
+    create_bar_chart(ds0,input$select_year_for_bar_chart)
   })
   
 }
