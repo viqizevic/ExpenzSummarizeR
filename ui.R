@@ -14,5 +14,11 @@ navbarPage(
       plotOutput("pie")
     )
   ),
+  tabPanel(
+    "Bar Chart",
+    fluidPage(
+      plotOutput("bar")
+    )
+  ),
   collapsible = TRUE
 )

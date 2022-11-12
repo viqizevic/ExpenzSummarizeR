@@ -2,7 +2,7 @@ library(ggplot2)
 theme_set(theme_classic())
 
 
-get_data_for_chart <- function(datain, yr, expensefl="Y") {
+get_data_for_chart <- function(datain, yr, expensefl="Y", threshold=2.5) {
   tball <- createSummary(datain, yr) %>% 
     mutate(AVAL = round(as.numeric(Total),digits=2)) %>%
     filter(!grepl("Saldo|Total",Category), AVAL!=0)
@@ -16,13 +16,13 @@ get_data_for_chart <- function(datain, yr, expensefl="Y") {
       PRCT=round((AVAL/totaval)*100,digits=1),
       Category=paste(Category, paste0("(",PRCT,"%)"))
     )
-  threshold <- 2.5
   ds1 <- ds0 %>% filter(PRCT>=threshold)
   cats <- ds1$Category
   restpct <- 100 - (ds1$PRCT %>% sum)
-  catother <- paste("~Others", paste0("(",restpct,"%)"))
+  restaval <- totaval - (ds1$AVAL %>% sum)
+  catother <- paste("~Others", paste0("(",round(restpct,digits=1),"%)"))
   cats <- append(cats, catother)
-  ds <- ds1 %>% add_row(Category=catother, PRCT=restpct)
+  ds <- ds1 %>% add_row(Category=catother, AVAL=restaval, PRCT=restpct)
   ds$Category <- factor(ds$Category, levels = cats)
   ds
 }

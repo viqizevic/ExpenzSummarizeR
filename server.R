@@ -6,6 +6,7 @@ library("DT")
 source("listing.R")
 source("summary.R")
 source("pie_chart.R")
+source("bar_chart.R")
 
 ds0 <- read_csv("cache/listing.csv")
 listingData <- ds0 %>% 
@@ -27,4 +28,8 @@ function(input, output, session) {
     create_pie_chart(ds0,year)
   })
 
+  output$bar <- renderPlot({
+    create_bar_chart(ds0,year)
+  })
+  
 }
