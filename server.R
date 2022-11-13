@@ -7,6 +7,7 @@ source("listing.R")
 source("summary.R")
 source("pie_chart.R")
 source("bar_chart.R")
+source("summary_bar_chart.R")
 
 const_ALL <- "-All-"
 
@@ -28,6 +29,8 @@ function(input, output, session) {
                     choices = years)
   updateSelectInput(session, "select_year_for_bar_chart",
                     choices = years)
+  updateSelectInput(session, "select_year_for_summary_bar_chart",
+                    choices = years)
   
   output$data_listing <- renderDT({
     dl <- listing
@@ -43,6 +46,10 @@ function(input, output, session) {
 
   output$bar <- renderPlot({
     create_bar_chart(ds0,input$select_year_for_bar_chart)
+  })
+  
+  output$summary_bar <- renderPlot({
+    create_summary_bar_chart(ds0,input$select_year_for_summary_bar_chart)
   })
   
 }

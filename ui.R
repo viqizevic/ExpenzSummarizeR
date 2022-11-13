@@ -29,5 +29,14 @@ navbarPage(
       plotOutput("bar")
     )
   ),
+  tabPanel(
+    "Summary Bar Chart",
+    fluidPage(
+      selectInput("select_year_for_summary_bar_chart",
+                  label = "Choose year:",
+                  choices = NULL),
+      plotOutput("summary_bar")
+    )
+  ),
   collapsible = TRUE
 )
