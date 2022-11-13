@@ -38,5 +38,14 @@ navbarPage(
       plotOutput("summary_bar")
     )
   ),
+  tabPanel(
+    "Saldo Line Chart",
+    fluidPage(
+      selectInput("select_year_for_saldo_line_chart",
+                  label = "Choose year:",
+                  choices = NULL),
+      plotOutput("saldo_line")
+    )
+  ),
   collapsible = TRUE
 )
