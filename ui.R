@@ -5,6 +5,9 @@ navbarPage(
   tabPanel(
     "Listing",
     fluidPage(
+      selectInput("select_category_for_listing",
+                  label = "Choose category:",
+                  choices = NULL),
       DTOutput("data_listing")
     )
   ),

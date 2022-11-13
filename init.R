@@ -48,7 +48,7 @@ readTransactionsFile <- function(folder="data", filename, acc,
   if(acc=="Deutsche Bank") {
     exl <- exl %>% mutate(
       payee = ifelse(is.na(payee), umsatzart, payee),
-      memo = ifelse(grepl("Vicky",payee,ignore.case=TRUE) & (grepl("RINP",memo) | memo=="-"),
+      memo = ifelse(grepl("Tanzil",payee,ignore.case=TRUE) & (grepl("RINP",memo) | memo=="-"),
                     paste(memo,iban), memo)
     )
   }
@@ -78,10 +78,6 @@ tb_mintos  <- readTransactionsFile(filename="Mintos-transactions.xlsx", acc="Min
 # Combine as one tibble
 tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, 
             tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
-
-ctg <- tb0 %>% count(category)
-# ctg %>% arrange(n) %>% formattable
-# tb0 %>% count(year, account) %>% formattable
 
 sc_file <- paste("data", "set_categories.xlsx", sep="/") 
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
@@ -135,6 +131,11 @@ tb %>% write_csv("cache/listing.csv")
 
 .check <- function() {
   
+  ctg <- tb %>% count(category)
+  ctg %>% arrange(n) %>% formattable
+  
+  tb %>% count(year, account) %>% formattable
+  
   # Display where suggested category not same as available one
   tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
     count(payee, memo, account, value, category, suggested_category) %>% formattable()
@@ -144,7 +145,7 @@ tb %>% write_csv("cache/listing.csv")
   
   tb %>% filter(grepl("Ihre",payee)) %>% formattable()
   tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
-  tb %>% filter(grepl("Reisev",category)) %>% formattable()
+  tb %>% filter(grepl("Reise",category)) %>% formattable()
   tb %>% filter(grepl("VIYU",memo)) %>% formattable()
   
   # Print used suggested categories
