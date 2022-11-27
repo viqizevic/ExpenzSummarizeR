@@ -106,4 +106,7 @@ printSummary <- function(datain, yr) {
   ))
 }
 
-printSummary(datain = tb, yr = "2022")
+.tryout <- function() {
+  printSummary(datain = tb, yr = "2022")
+}
+

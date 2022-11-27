@@ -15,4 +15,7 @@ printListing <- function(datain, yr="all") {
     formattable(list('value' = improvement_formatter))
 }
 
-printListing(datain = tb, yr="2022")
+.tryout <- function() {
+  printListing(datain = tb, yr="2022")
+}
+
