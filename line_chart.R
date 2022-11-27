@@ -14,9 +14,17 @@ getSaldoSummary <- function(datain, yr) {
 }
 
 
+get_flatten_data <- function(ds, mode="MONTHLY") {
+  df <- rbind(ds, ds %>% mutate(Month=Month+0.95))
+  df %>% arrange(Month)
+}
+
+
 create_saldo_line_chart <- function(datain, year) {
   ds <- getSaldoSummary(datain, year)
-  ggplot(ds, aes(Month, Saldo)) + geom_line()
+  df <- get_flatten_data(ds)
+  ggplot(df, aes(Month, Saldo)) + geom_line() +
+    scale_x_continuous(name = "Month", breaks = 1:12, limits = c(1,13))
 }
 
 
