@@ -19,7 +19,6 @@ listingData <- ds0 %>%
   mutate(
     date = as.Date(date)
   )
-listing <- createListing(listingData) %>% arrange(desc(date))
 years <- unique(listingData$year) %>% sort(decreasing = TRUE)
 categs <- unique(listingData$category) %>% append(const_ALL) %>% sort
 
@@ -36,8 +35,25 @@ function(input, output, session) {
   updateSelectInput(session, "select_year_for_saldo_line_chart",
                     choices = years)
   
+  observeEvent(c(input$select_category_for_listing),
+               {
+                 list_years <- years
+                 if (input$select_category_for_listing != const_ALL) {
+                   list_years <- listingData %>% 
+                     filter(category==input$select_category_for_listing) %>% 
+                     pull(year) %>% unique %>% sort(decreasing = TRUE)
+                 }
+                 list_years <- c(const_ALL, list_years)
+                 updateSelectInput(session, "select_year_for_listing",
+                                   choices = list_years)
+               })
+  
   output$data_listing <- renderDT({
-    dl <- listing
+    dl0 <- listingData
+    if(input$select_year_for_listing != const_ALL) {
+      dl0 <- dl0 %>% filter(year==as.numeric(input$select_year_for_listing))
+    }
+    dl <- createListing(dl0) %>% arrange(desc(date))
     if (input$select_category_for_listing != const_ALL) {
       dl <- dl %>% filter(category==input$select_category_for_listing)
     }

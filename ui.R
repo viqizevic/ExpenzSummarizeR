@@ -8,6 +8,9 @@ navbarPage(
       selectInput("select_category_for_listing",
                   label = "Choose category:",
                   choices = NULL),
+      selectInput("select_year_for_listing",
+                  label = "Choose year:",
+                  choices = NULL),
       DTOutput("data_listing")
     )
   ),
