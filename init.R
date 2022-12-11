@@ -52,6 +52,11 @@ readTransactionsFile <- function(folder="data", filename, acc,
                     paste(memo,iban), memo)
     )
   }
+  if(acc=="ING DiBa") {
+    exl <- exl %>% mutate(
+      payee = ifelse(is.na(payee), buchungstext, payee)
+    )
+  }
   if(any(is.na(exl$date))) warning("Failed to get dates. Please check format.", immediate. = TRUE)
   checkIncomeAndExpense(exl)
   exl %>% select(date, payee, memo, income, expense, category) %>% 
