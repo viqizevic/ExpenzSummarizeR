@@ -16,11 +16,15 @@ navbarPage(
   ),
   tabPanel(
     "Pie Chart",
-    fluidPage(
-      selectInput("select_year_for_pie_chart",
-                  label = "Choose year:",
-                  choices = NULL),
-      plotOutput("pie")
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("select_year_for_pie_chart",
+                    label = "Choose year:",
+                    choices = NULL)
+      ),
+      mainPanel(
+        plotOutput("pie")
+      )
     )
   ),
   tabPanel(
