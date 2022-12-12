@@ -7,16 +7,20 @@ navbarPage(
     fluidPage(
       fluidRow(
         column(
-          6,
+          4,
           selectInput("select_category_for_listing",
                       label = "Choose category:",
                       choices = NULL)
         ),
         column(
-          6,
+          4,
           selectInput("select_year_for_listing",
                       label = "Choose year:",
                       choices = NULL)
+        ),
+        column(
+          4,
+          h5(textOutput("total", container = span))
         )
       ),
       DTOutput("data_listing")

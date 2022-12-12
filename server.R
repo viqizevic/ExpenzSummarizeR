@@ -2,6 +2,7 @@ library("tidyverse")
 library("lubridate")
 library("formattable")
 library("DT")
+library("scales")
 
 source("init.R")
 source("listing.R")
@@ -21,6 +22,18 @@ listingData <- ds0 %>%
   )
 years <- unique(listingData$year) %>% sort(decreasing = TRUE)
 categs <- unique(listingData$category) %>% append(const_ALL) %>% sort
+
+filtered_listing <- function(listing, categ, yr) {
+  dl0 <- listing
+  if(yr != const_ALL) {
+    dl0 <- dl0 %>% filter(year==as.numeric(yr))
+  }
+  dl <- createListing(dl0) %>% arrange(desc(date))
+  if (categ != const_ALL) {
+    dl <- dl %>% filter(category==categ)
+  }
+  dl
+}
 
 function(input, output, session) {
   
@@ -49,15 +62,21 @@ function(input, output, session) {
                })
   
   output$data_listing <- renderDT({
-    dl0 <- listingData
-    if(input$select_year_for_listing != const_ALL) {
-      dl0 <- dl0 %>% filter(year==as.numeric(input$select_year_for_listing))
-    }
-    dl <- createListing(dl0) %>% arrange(desc(date))
-    if (input$select_category_for_listing != const_ALL) {
-      dl <- dl %>% filter(category==input$select_category_for_listing)
-    }
-    dl %>% datatable()
+    filtered_listing(listingData,
+                     input$select_category_for_listing,
+                     input$select_year_for_listing) %>% 
+      datatable()
+  })
+  
+  output$total <- renderText({
+    tot <- filtered_listing(listingData,
+                     input$select_category_for_listing,
+                     input$select_year_for_listing) %>% 
+      pull(value) %>% sum
+    paste("Total",
+          paste0("(category:", input$select_category_for_listing,
+                 ", year:", input$select_year_for_listing, "):"),
+          scales::dollar(tot, prefix = "€"))
   })
   
   output$pie <- renderPlot({
