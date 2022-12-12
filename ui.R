@@ -5,12 +5,20 @@ navbarPage(
   tabPanel(
     "Listing",
     fluidPage(
-      selectInput("select_category_for_listing",
-                  label = "Choose category:",
-                  choices = NULL),
-      selectInput("select_year_for_listing",
-                  label = "Choose year:",
-                  choices = NULL),
+      fluidRow(
+        column(
+          6,
+          selectInput("select_category_for_listing",
+                      label = "Choose category:",
+                      choices = NULL)
+        ),
+        column(
+          6,
+          selectInput("select_year_for_listing",
+                      label = "Choose year:",
+                      choices = NULL)
+        )
+      ),
       DTOutput("data_listing")
     )
   ),
