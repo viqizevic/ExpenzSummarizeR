@@ -47,6 +47,8 @@ function(input, output, session) {
                     choices = years)
   updateSelectInput(session, "select_year_for_saldo_line_chart",
                     choices = years)
+  updateSelectInput(session, "select_column_for_freq",
+                    choices = names(listingData))
   
   observeEvent(c(input$select_category_for_listing),
                {
@@ -95,4 +97,10 @@ function(input, output, session) {
     create_saldo_line_chart(ds0,input$select_year_for_saldo_line_chart)
   })
   
+  output$selected_freq_columns <- renderDT({
+    plyr::count(listingData, input$select_column_for_freq) %>% 
+      datatable(options = list(
+        pageLength = 25
+      ))
+  })
 }

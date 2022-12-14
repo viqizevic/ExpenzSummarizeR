@@ -66,5 +66,15 @@ navbarPage(
       plotOutput("saldo_line")
     )
   ),
+  tabPanel(
+    "Freq",
+    fluidPage(
+      selectInput("select_column_for_freq",
+                  label = "Choose columns:",
+                  choices = NULL,
+                  multiple = TRUE),
+      DTOutput("selected_freq_columns")
+    )
+  ),
   collapsible = TRUE
 )
