@@ -1,6 +1,7 @@
 rm(list = ls())
 
 library(plyr)
+library(dplyr)
 library(tidyverse)
 library(readxl)
 library(janitor)
@@ -117,7 +118,7 @@ tb <- tb1 %>% mutate(
 )
 
 # Check if any duplicates created
-duplsgcats <- suggcats0 %>% count(date, payee, memo, account, value) %>% filter(n!=1)
+duplsgcats <- suggcats0 %>% dplyr::count(date, payee, memo, account, value) %>% filter(n!=1)
 if(nrow(duplsgcats) > 0) {
   warning("Duplicates found. Please check.", immediate. = TRUE)
   duplsgcats %>% formattable()

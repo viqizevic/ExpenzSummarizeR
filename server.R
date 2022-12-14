@@ -1,6 +1,3 @@
-library("tidyverse")
-library("lubridate")
-library("formattable")
 library("DT")
 library("scales")
 
@@ -98,6 +95,9 @@ function(input, output, session) {
   })
   
   output$selected_freq_columns <- renderDT({
+    if(is.null(input$select_column_for_freq)) {
+      return(listingData %>% datatable())
+    }
     plyr::count(listingData, input$select_column_for_freq) %>% 
       datatable(options = list(
         pageLength = 25
