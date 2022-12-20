@@ -12,13 +12,17 @@ source("line_chart.R")
 const_ALL <- "-All-"
 
 ds0 <- read_csv("cache/listing.csv")
+categs <- unique(ds0$category) %>% append(const_ALL) %>% sort
+years <- unique(ds0$year) %>% sort(decreasing = TRUE)
+accounts <- unique(ds0$account) %>% append(const_ALL) %>% sort
 listingData <- ds0 %>% 
   arrange(date) %>% 
   mutate(
-    date = as.Date(date)
+    date = as.Date(date),
+    category = factor(category, levels=categs),
+    year = factor(year, levels=years),
+    account = factor(account, levels=accounts)
   )
-years <- unique(listingData$year) %>% sort(decreasing = TRUE)
-categs <- unique(listingData$category) %>% append(const_ALL) %>% sort
 
 filtered_listing <- function(listing, categ, yr) {
   dl0 <- listing
@@ -64,7 +68,7 @@ function(input, output, session) {
     filtered_listing(listingData,
                      input$select_category_for_listing,
                      input$select_year_for_listing) %>% 
-      datatable()
+      datatable(filter = "top")
   })
   
   output$total <- renderText({
@@ -99,8 +103,10 @@ function(input, output, session) {
       return(listingData %>% datatable())
     }
     plyr::count(listingData, input$select_column_for_freq) %>% 
-      datatable(options = list(
-        pageLength = 25
-      ))
+      datatable(
+        filter = "top",
+        options = list(
+          pageLength = 25
+        ))
   })
 }
