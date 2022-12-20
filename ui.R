@@ -13,13 +13,19 @@ navbarPage(
                       choices = NULL)
         ),
         column(
-          4,
+          2,
           selectInput("select_year_for_listing",
                       label = "Choose year:",
                       choices = NULL)
         ),
         column(
-          4,
+          3,
+          selectInput("select_account_for_listing",
+                      label = "Choose account:",
+                      choices = NULL)
+        ),
+        column(
+          3,
           h5(textOutput("total", container = span))
         )
       ),

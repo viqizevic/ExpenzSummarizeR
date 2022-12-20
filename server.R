@@ -24,7 +24,7 @@ listingData <- ds0 %>%
     account = factor(account, levels=accounts)
   )
 
-filtered_listing <- function(listing, categ, yr) {
+filtered_listing <- function(listing, categ, acc, yr) {
   dl0 <- listing
   if(yr != const_ALL) {
     dl0 <- dl0 %>% filter(year==as.numeric(yr))
@@ -32,6 +32,9 @@ filtered_listing <- function(listing, categ, yr) {
   dl <- createListing(dl0) %>% arrange(desc(date))
   if (categ != const_ALL) {
     dl <- dl %>% filter(category==categ)
+  }
+  if (acc != const_ALL) {
+    dl <- dl %>% filter(account==acc)
   }
   dl
 }
@@ -54,19 +57,27 @@ function(input, output, session) {
   observeEvent(c(input$select_category_for_listing),
                {
                  list_years <- years
+                 list_accounts <- accounts
                  if (input$select_category_for_listing != const_ALL) {
-                   list_years <- listingData %>% 
-                     filter(category==input$select_category_for_listing) %>% 
-                     pull(year) %>% unique %>% sort(decreasing = TRUE)
+                   dt0 <- listingData %>% 
+                     filter(category==input$select_category_for_listing)
+                   list_years <- dt0 %>% 
+                     pull(year) %>% unique %>% as.character %>% sort(decreasing = TRUE)
+                   list_accounts <- dt0 %>% 
+                     pull(account) %>% unique %>% as.character %>% sort
                  }
                  list_years <- c(const_ALL, list_years)
+                 list_accounts <- c(const_ALL, list_accounts)
                  updateSelectInput(session, "select_year_for_listing",
                                    choices = list_years)
+                 updateSelectInput(session, "select_account_for_listing",
+                                   choices = list_accounts)
                })
   
   output$data_listing <- renderDT({
     filtered_listing(listingData,
                      input$select_category_for_listing,
+                     input$select_account_for_listing,
                      input$select_year_for_listing) %>% 
       datatable(filter = "top")
   })
@@ -74,11 +85,14 @@ function(input, output, session) {
   output$total <- renderText({
     tot <- filtered_listing(listingData,
                      input$select_category_for_listing,
+                     input$select_account_for_listing,
                      input$select_year_for_listing) %>% 
       pull(value) %>% sum
     paste("Total",
           paste0("(category:", input$select_category_for_listing,
-                 ", year:", input$select_year_for_listing, "):"),
+                 ", year:", input$select_year_for_listing,
+                 ", account:", input$select_account_for_listing,
+                 "):"),
           scales::dollar(tot, prefix = "€"))
   })
   
