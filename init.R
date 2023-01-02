@@ -50,7 +50,7 @@ readTransactionsFile <- function(folder="data", filename, acc,
   if(acc=="Deutsche Bank") {
     exl <- exl %>% mutate(
       payee = ifelse(is.na(payee), umsatzart, payee),
-      memo = ifelse(grepl("Tanzil",payee,ignore.case=TRUE) & (grepl("RINP",memo) | memo=="-"),
+      memo = ifelse(grepl("Tanzil",payee,ignore.case=TRUE) & (grepl("RINP|Tabungan",memo) | memo=="-"),
                     paste(memo,iban), memo)
     )
   }
