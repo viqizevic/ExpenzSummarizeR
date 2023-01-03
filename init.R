@@ -144,8 +144,13 @@ tb %>% write_csv("cache/listing.csv")
   tb %>% count(year, account) %>% formattable
   
   # Display where suggested category not same as available one
-  tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
-    count(payee, memo, account, value, category, suggested_category) %>% formattable()
+  checkcat <- tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
+    count(payee, memo, account, value, category, suggested_category)
+  checkcat %>% formattable()
+  newcat <- checkcat %>%
+    filter(!(grepl("AMZN|KARSTADT|Rossmann",payee) & category %in% c("Bestellung","Geschenke"))) %>% 
+    filter(!(grepl("Rossmann",payee) & category %in% c("COVID-Test","Medikamente")))
+  newcat %>% formattable()
   
   tb %>% count(payee, memo, account, category, suggested_category) %>% 
     filter(is.na(suggested_category), n>1) %>% formattable()
