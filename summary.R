@@ -109,4 +109,3 @@ printSummary <- function(datain, yr) {
 .tryout <- function() {
   printSummary(datain = tb, yr = "2023")
 }
-

@@ -6,16 +6,15 @@ createListing <- function(datain, yr="all") {
   ds %>% mutate(
     payee = if_else(is.na(payee), "", payee),
     memo = if_else(is.na(memo), "", memo)
-  ) %>% arrange(category, date, payee) %>% 
+  ) %>% arrange(category, date, payee) %>%
     select(category, date, payee, account, value, memo)
 }
 
 printListing <- function(datain, yr="all") {
-  createListing(datain, yr) %>% 
+  createListing(datain, yr) %>%
     formattable(list('value' = improvement_formatter))
 }
 
 .tryout <- function() {
-  printListing(datain = tb, yr="2022")
+  printListing(datain = tb, yr="2023")
 }
-

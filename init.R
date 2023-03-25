@@ -92,7 +92,7 @@ tb_mintos  <- read_trans_file(file = "Mintos-transactions.xlsx", acc = "Mintos",
 
 # Combine as one tibble
 tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb,
-            tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
+              tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
 
 sc_file <- paste("data", "set_categories.xlsx", sep="/")
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
@@ -136,8 +136,10 @@ if(nrow(duplsgcats) > 0) {
 misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
 if(nrow(misscats) > 0) {
   warning("Found blank category. Please check.", immediate. = TRUE)
+  misscats %>%
+    select(payee, memo, account, value, category, suggested_category) %>%
+    formattable()
 }
-misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
 
 
 # Save cache data for Shiny
@@ -171,4 +173,3 @@ tb %>% write_csv("cache/listing.csv")
   # Print used suggested categories
   tb1 %>% filter(is.na(category)) %>% count(payee, memo, suggested_category) %>% formattable()
 }
-
