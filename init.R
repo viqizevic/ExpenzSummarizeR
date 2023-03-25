@@ -14,8 +14,8 @@ customRed = "#ff7f7f"
 
 # Format improvement
 improvement_formatter <- formatter("span", style = x ~ style(
-  color = ifelse(x > 0, customGreen, 
-                 ifelse(x < 0, customRed, "black")))
+  color = ifelse(x > 0, customGreen,
+                  ifelse(x < 0, customRed, "black")))
 )
 
 categories <- read_csv("categories.csv", show_col_types = FALSE)
@@ -23,7 +23,7 @@ categories <- read_csv("categories.csv", show_col_types = FALSE)
 # Check function for valid income and expense values
 checkIncomeAndExpense <- function(datain) {
   ds <- datain %>% mutate(
-    navalue = (is.na(income) | is.na(expense)),  
+    navalue = (is.na(income) | is.na(expense)),
     inexpvalue = (income != 0 & expense != 0),
     wrongincome = (income < 0),
     wrongexpense = (expense > 0)
@@ -37,10 +37,10 @@ checkIncomeAndExpense <- function(datain) {
 
 # Reader function
 readTransactionsFile <- function(folder="data", filename, acc,
-                                 dateformat="%d.%m.%Y") {
-  file <- paste(folder, filename, sep="/") 
-  exl <- read_excel(file) %>% as_tibble %>% clean_names %>% 
-    left_join(categories, by = "category") %>% 
+                                  dateformat="%d.%m.%Y") {
+  file <- paste(folder, filename, sep="/")
+  exl <- read_excel(file) %>% as_tibble %>% clean_names %>%
+    left_join(categories, by = "category") %>%
     mutate(
       category = ifelse(is.na(preferred), category, preferred),
       dtmn = strptime(date,format=dateformat),
@@ -61,7 +61,7 @@ readTransactionsFile <- function(folder="data", filename, acc,
   }
   if(any(is.na(exl$date))) warning("Failed to get dates. Please check format.", immediate. = TRUE)
   checkIncomeAndExpense(exl)
-  exl %>% select(date, payee, memo, income, expense, category) %>% 
+  exl %>% select(date, payee, memo, income, expense, category) %>%
     mutate(
       account = acc,
       value = income+expense,
@@ -83,15 +83,15 @@ tb_wstnrot <- readTransactionsFile(filename="Umsaetze_WSTR.xlsx", acc="Wüstenro
 tb_mintos  <- readTransactionsFile(filename="Mintos-transactions.xlsx", acc="Mintos", dateformat="%Y-%m-%d")
 
 # Combine as one tibble
-tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb, 
+tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb,
             tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
 
-sc_file <- paste("data", "set_categories.xlsx", sep="/") 
+sc_file <- paste("data", "set_categories.xlsx", sep="/")
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
 
 # Get suggested categories
-suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>% 
-  select(-"category", -"year", -"year_month", -"month", -"income", -"expense") %>% 
+suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
+  select(-"category", -"year", -"year_month", -"month", -"income", -"expense") %>%
   mutate(
     detect_payee = str_detect(payee, payee_pattern),
     no_payee_pattern = is.na(payee_pattern),
@@ -106,8 +106,8 @@ suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
     detect_memo | no_memo_pattern,
     detect_exp_flag | no_expense_flag,
     detect_account | no_account_pattern
-  ) %>% 
-  left_join(categories, by=c("suggested_category"="category")) %>% 
+  ) %>%
+  left_join(categories, by=c("suggested_category"="category")) %>%
   mutate(
     suggested_category = ifelse(is.na(preferred), suggested_category, preferred),
   )
@@ -127,7 +127,7 @@ if(nrow(duplsgcats) > 0) {
 
 misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
 if(nrow(misscats) > 0) {
-  warning("Found blank category. Please check.", immediate. = TRUE) 
+  warning("Found blank category. Please check.", immediate. = TRUE)
 }
 misscats %>% select(payee, memo, account, value, category, suggested_category) %>% formattable()
 
@@ -137,29 +137,29 @@ tb %>% write_csv("cache/listing.csv")
 
 
 .check <- function() {
-  
+
   ctg <- tb %>% count(category)
   ctg %>% arrange(n) %>% formattable
-  
+
   tb %>% count(year, account) %>% formattable
-  
+
   # Display where suggested category not same as available one
-  checkcat <- tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>% 
+  checkcat <- tb %>% filter(!is.na(suggested_category),category!=suggested_category) %>%
     count(payee, memo, account, value, category, suggested_category)
   checkcat %>% formattable()
   newcat <- checkcat %>%
-    filter(!(grepl("AMZN|KARSTADT|Rossmann",payee) & category %in% c("Bestellung","Geschenke"))) %>% 
+    filter(!(grepl("AMZN|KARSTADT|Rossmann",payee) & category %in% c("Bestellung","Geschenke"))) %>%
     filter(!(grepl("Rossmann",payee) & category %in% c("COVID-Test","Medikamente")))
   newcat %>% formattable()
-  
-  tb %>% count(payee, memo, account, category, suggested_category) %>% 
+
+  tb %>% count(payee, memo, account, category, suggested_category) %>%
     filter(is.na(suggested_category), n>1) %>% formattable()
-  
+
   tb %>% filter(grepl("Ihre",payee)) %>% formattable()
   tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
   tb %>% filter(grepl("Reise",category)) %>% formattable()
   tb %>% filter(grepl("VIYU",memo)) %>% formattable()
-  
+
   # Print used suggested categories
   tb1 %>% filter(is.na(category)) %>% count(payee, memo, suggested_category) %>% formattable()
 }

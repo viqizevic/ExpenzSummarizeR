@@ -15,21 +15,21 @@ get_end_balance <- function(datain, yr, mnth=12, acc="") {
 
 # Sub-function to get saldo at each month
 get_monthly_saldo <- function(datasum, datain, yr) {
-  dssaldo <- datasum %>% 
+  dssaldo <- datasum %>%
     filter(str_starts(category,"Saldo"), month!="Total")
   accs <- dssaldo %>% count(category) %>% select(-n)
   ym <- dssaldo %>% count(year_month, month) %>% select(-n)
   # cross join to display all months and accounts
-  ymaccs <- ym %>% full_join(accs, by=character()) %>% 
-    left_join(dssaldo, by = c("year_month", "month", "category")) %>% 
+  ymaccs <- ym %>% full_join(accs, by=character()) %>%
+    left_join(dssaldo, by = c("year_month", "month", "category")) %>%
     mutate(sum=if_else(is.na(sum),0,sum))
   for (acc in accs$category) {
     account <- gsub("Saldo\\s*","",acc)
     dssaldo1 <- ymaccs %>% filter(category==acc)
     saldos <- dssaldo1 %>% .$sum %>% cumsum
     dssaldo1$csum <- saldos + get_end_balance(datain, as.numeric(yr)-1, 12, account)
-    ymaccs <- ymaccs %>% 
-      left_join(dssaldo1, by = c("year_month", "month", "category", "sum")) %>% 
+    ymaccs <- ymaccs %>%
+      left_join(dssaldo1, by = c("year_month", "month", "category", "sum")) %>%
       mutate(sum=if_else(!is.na(csum),csum,sum)) %>% select(-csum)
   }
   ymaccs
@@ -38,46 +38,46 @@ get_monthly_saldo <- function(datasum, datain, yr) {
 # Main function to create the summary
 createSummary <- function(datain, yr) {
   stopifnot(grepl("\\d{4}", yr))
-  
+
   blankcat <- datain %>% filter(is.na(category))
   if(nrow(blankcat)>0) warning("Found obs with blank category, will be ignored.", immediate. = TRUE)
   datain <- datain %>% filter(!is.na(category))
-  
+
   tb0 <- datain %>% filter(year == yr)
   # Get number of months (for average calculation)
   countmonths <- tb0 %>% count(month)
   nmonths <- length(countmonths$month)
-  
+
   # Create total category
   tbcatsum1 <- tb0 %>% mutate(category = "Total")
   tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
   tbsaldo1 <- tbsaldo0 %>% mutate(category = paste(category,account))
   tbcatsum2 <- rbind(tb0, tbcatsum1, tbsaldo0, tbsaldo1)
-  
+
   # Get frequency counts
   frq <- tbcatsum2 %>% count(category, month) %>%
     group_by(category) %>% summarise(n = n())
-  
+
   # Create total for the whole year
   tbyrtot <- tbcatsum2 %>% mutate(year_month = paste0(year,"-99"), month = "Total")
   tball1 <- rbind(tbcatsum2, tbyrtot)
-  
+
   # Get the summary and transpose by months
-  tball1sum <- tball1 %>% group_by(year_month, month, category) %>% 
+  tball1sum <- tball1 %>% group_by(year_month, month, category) %>%
     summarise(sum = sum(value)) %>% ungroup()
-  
+
   # Get monthly saldo
   tbsaldo <- get_monthly_saldo(tball1sum, datain, yr)
-  
-  tball1saldo <- rbind(tball1sum %>% filter(!str_starts(category,"Saldo")), tbsaldo) %>% 
+
+  tball1saldo <- rbind(tball1sum %>% filter(!str_starts(category,"Saldo")), tbsaldo) %>%
     mutate(sumc = if_else(sum != 0, sprintf("%.2f",sum), ""))
-  
-  tball2 <- tball1saldo %>% select(-year_month, -sum) %>% 
-    pivot_wider(names_from = month, values_from = sumc, values_fill = "") %>% 
+
+  tball2 <- tball1saldo %>% select(-year_month, -sum) %>%
+    pivot_wider(names_from = month, values_from = sumc, values_fill = "") %>%
     mutate(
       Total = if_else(Total == "", "0.00", Total),
       Average = round(as.numeric(Total)/nmonths, digits = 2)
-    ) %>% 
+    ) %>%
     arrange(category)
   # Order by Freq and amount
   tball2$Freq <- frq$n
@@ -89,14 +89,14 @@ createSummary <- function(datain, yr) {
       order = ifelse(grepl("Total|Saldo",category), -100*maxavg+abs(Average), order),
       Total = ifelse(grepl("Saldo",category), "", Total),
       Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average))
-    ) %>% 
-    arrange(-order) %>% 
-    rename(Category = category) %>% 
+    ) %>%
+    arrange(-order) %>%
+    rename(Category = category) %>%
     select(-order)
 }
 
 printSummary <- function(datain, yr) {
-  tball <- createSummary(datain, yr) %>% 
+  tball <- createSummary(datain, yr) %>%
     rename_with(~ gsub("Category", yr, .x, fixed = TRUE))
   # Display formatted table
   alignments <- c("l", rep(c("r"),times=ncol(tball)-2))
@@ -107,6 +107,6 @@ printSummary <- function(datain, yr) {
 }
 
 .tryout <- function() {
-  printSummary(datain = tb, yr = "2022")
+  printSummary(datain = tb, yr = "2023")
 }
 
