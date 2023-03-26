@@ -49,10 +49,12 @@ create_summary <- function(datain, yr) {
   nmonths <- length(countmonths$month)
 
   # Create total category
-  tbcatsum1 <- tb0 %>% mutate(category = "Total")
+  tbcatsum0 <- tb0 %>% mutate(category = "Total")
+  tbcatsum1 <- tb0 %>% filter(!grepl("Transfer ", category)) %>% 
+    mutate(category = ifelse(value>0, "Total Income", "Total Outcome"))
   tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
   tbsaldo1 <- tbsaldo0 %>% mutate(category = paste(category,account))
-  tbcatsum2 <- rbind(tb0, tbcatsum1, tbsaldo0, tbsaldo1)
+  tbcatsum2 <- rbind(tb0, tbcatsum0, tbcatsum1, tbsaldo0, tbsaldo1)
 
   # Get frequency counts
   frq <- tbcatsum2 %>% count(category, month) %>%
@@ -86,11 +88,12 @@ create_summary <- function(datain, yr) {
     mutate(
       order = ifelse(Average < 0, -maxavg-Average, Average),
       order = ifelse(Average < 0 & 7 <= Freq, (-maxavg-Average)/10, order),
-      order = ifelse(grepl("Total",category), -100*maxavg+abs(Average), order),
+      order = ifelse(grepl("Total",category), -100*maxavg+Average, order),
+      order = ifelse(grepl("Total ",category), -150*maxavg+Average, order),
       order = ifelse(grepl("Saldo",category), -200*maxavg+abs(Average), order),
       Total = ifelse(grepl("Saldo",category), "", Total),
       Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average)),
-      category = gsub("^Saldo ",">> Saldo ", category)
+      category = gsub("^(Total|Saldo) ",">> \\1 ", category)
     ) %>%
     arrange(-order) %>%
     rename(Category = category) %>%
