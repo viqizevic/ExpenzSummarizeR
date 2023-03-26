@@ -43,6 +43,9 @@ create_summary <- function(datain, yr) {
   if(nrow(blankcat)>0) warning("Found obs with blank category, will be ignored.", immediate. = TRUE)
   datain <- datain %>% filter(!is.na(category))
 
+  fix_categories <- datain %>% count(category,month) %>% count(category) %>%
+    filter(n == 12, !grepl("Transfer ", category)) %>% pull(category)
+
   tb0 <- datain %>% filter(year == yr)
   # Get number of months (for average calculation)
   countmonths <- tb0 %>% count(month)
@@ -50,11 +53,13 @@ create_summary <- function(datain, yr) {
 
   # Create total category
   tbcatsum0 <- tb0 %>% mutate(category = "Total")
-  tbcatsum1 <- tb0 %>% filter(!grepl("Transfer ", category)) %>% 
+  tbcatsum1 <- tb0 %>% filter(!grepl("Transfer ", category)) %>%
     mutate(category = ifelse(value>0, "Total Income", "Total Outcome"))
+  tbcatsum1f <- tb0 %>% filter(category %in% fix_categories) %>%
+    mutate(category = ifelse(value>0, "Total Income Fix (F)", "Total Outcome Fix (F)"))
   tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
   tbsaldo1 <- tbsaldo0 %>% mutate(category = paste(category,account))
-  tbcatsum2 <- rbind(tb0, tbcatsum0, tbcatsum1, tbsaldo0, tbsaldo1)
+  tbcatsum2 <- rbind(tb0, tbcatsum0, tbcatsum1, tbcatsum1f, tbsaldo0, tbsaldo1)
 
   # Get frequency counts
   frq <- tbcatsum2 %>% count(category, month) %>%
@@ -86,14 +91,16 @@ create_summary <- function(datain, yr) {
   maxavg <- max(abs(tball2$Average))
   tball3 <- tball2 %>%
     mutate(
+      Freq = ifelse(category %in% fix_categories, 12, Freq),
       order = ifelse(Average < 0, -maxavg-Average, Average),
-      order = ifelse(Average < 0 & 7 <= Freq, (-maxavg-Average)/10, order),
+      order = ifelse(Average < 0 & 10 <= Freq, (-maxavg-Average)/10, order),
       order = ifelse(grepl("Total",category), -100*maxavg+Average, order),
       order = ifelse(grepl("Total ",category), -150*maxavg+Average, order),
       order = ifelse(grepl("Saldo",category), -200*maxavg+abs(Average), order),
       Total = ifelse(grepl("Saldo",category), "", Total),
       Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average)),
-      category = gsub("^(Total|Saldo) ",">> \\1 ", category)
+      category = gsub("^(Total|Saldo) ",">> \\1 ", category),
+      category = ifelse(category %in% fix_categories, paste(category, "(F)"), category)
     ) %>%
     arrange(-order) %>%
     rename(Category = category) %>%
