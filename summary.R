@@ -1,9 +1,9 @@
 # Create Summary
 
 # Sub-function to get balance at the end of the year
-get_end_balance <- function(datain, yr, mnth=12, acc="") {
+get_end_balance <- function(datain, yr, mnth = 12, acc = "") {
   if (acc != "") {
-    datain <- datain %>% filter(account==acc)
+    datain <- datain %>% filter(account == acc)
   }
   stopifnot(all(grepl("\\d{4}", datain$year)))
   stopifnot(!is.na(datain$value))
@@ -36,7 +36,7 @@ get_monthly_saldo <- function(datasum, datain, yr) {
 }
 
 # Main function to create the summary
-createSummary <- function(datain, yr) {
+create_summary <- function(datain, yr) {
   stopifnot(grepl("\\d{4}", yr))
 
   blankcat <- datain %>% filter(is.na(category))
@@ -86,17 +86,19 @@ createSummary <- function(datain, yr) {
     mutate(
       order = ifelse(Average < 0, -maxavg-Average, Average),
       order = ifelse(Average < 0 & 7 <= Freq, (-maxavg-Average)/10, order),
-      order = ifelse(grepl("Total|Saldo",category), -100*maxavg+abs(Average), order),
+      order = ifelse(grepl("Total",category), -100*maxavg+abs(Average), order),
+      order = ifelse(grepl("Saldo",category), -200*maxavg+abs(Average), order),
       Total = ifelse(grepl("Saldo",category), "", Total),
-      Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average))
+      Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average)),
+      category = gsub("^Saldo ",">> Saldo ", category)
     ) %>%
     arrange(-order) %>%
     rename(Category = category) %>%
     select(-order)
 }
 
-printSummary <- function(datain, yr) {
-  tball <- createSummary(datain, yr) %>%
+print_summary <- function(datain, yr) {
+  tball <- create_summary(datain, yr) %>%
     rename_with(~ gsub("Category", yr, .x, fixed = TRUE))
   # Display formatted table
   alignments <- c("l", rep(c("r"),times=ncol(tball)-2))
@@ -107,5 +109,5 @@ printSummary <- function(datain, yr) {
 }
 
 .tryout <- function() {
-  printSummary(datain = tb, yr = "2023")
+  print_summary(datain = tb, yr = "2023")
 }
