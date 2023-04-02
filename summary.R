@@ -39,27 +39,35 @@ get_monthly_saldo <- function(datasum, datain, yr) {
 create_summary <- function(datain, yr) {
   stopifnot(grepl("\\d{4}", yr))
 
+  # Check for blank category, filter out blank one
   blankcat <- datain %>% filter(is.na(category))
   if(nrow(blankcat)>0) warning("Found obs with blank category, will be ignored.", immediate. = TRUE)
   datain <- datain %>% filter(!is.na(category))
 
+  # Get fix categories
   fix_categories <- datain %>% count(category,month) %>% count(category) %>%
     filter(n == 12, !grepl("Transfer ", category)) %>% pull(category)
 
+  # Filter by year given
   tb0 <- datain %>% filter(year == yr)
   # Get number of months (for average calculation)
   countmonths <- tb0 %>% count(month)
   nmonths <- length(countmonths$month)
 
   # Create total category
-  tbcatsum0 <- tb0 %>% mutate(category = "Total")
+  tbcat_total <- tb0 %>% mutate(category = "Total")
+  # Create total income and outcome category
   tbcatsum1 <- tb0 %>% filter(!grepl("Transfer ", category)) %>%
     mutate(category = ifelse(value>0, "Total Income", "Total Outcome"))
+  # Create total income and outcome fix category
   tbcatsum1f <- tb0 %>% filter(category %in% fix_categories) %>%
     mutate(category = ifelse(value>0, "Total Income Fix (F)", "Total Outcome Fix (F)"))
-  tbsaldo0 <- tbcatsum1 %>% mutate(category = "Saldo")
+  # Create saldo category
+  tbsaldo0 <- tbcat_total %>% mutate(category = "Saldo")
+  # Create saldo per account category
   tbsaldo1 <- tbsaldo0 %>% mutate(category = paste(category,account))
-  tbcatsum2 <- rbind(tb0, tbcatsum0, tbcatsum1, tbcatsum1f, tbsaldo0, tbsaldo1)
+  # Append all total and saldo
+  tbcatsum2 <- rbind(tb0, tbcat_total, tbcatsum1, tbcatsum1f, tbsaldo0, tbsaldo1)
 
   # Get frequency counts
   frq <- tbcatsum2 %>% count(category, month) %>%
@@ -67,6 +75,7 @@ create_summary <- function(datain, yr) {
 
   # Create total for the whole year
   tbyrtot <- tbcatsum2 %>% mutate(year_month = paste0(year,"-99"), month = "Total")
+  # Append total in year
   tball1 <- rbind(tbcatsum2, tbyrtot)
 
   # Get the summary and transpose by months
