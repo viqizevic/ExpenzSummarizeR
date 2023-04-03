@@ -45,8 +45,7 @@ create_summary <- function(datain, yr) {
   datain <- datain %>% filter(!is.na(category))
 
   # Get fix categories
-  fix_categories <- datain %>% count(category,month) %>% count(category) %>%
-    filter(n == 12, !grepl("Transfer ", category)) %>% pull(category)
+  fix_categs <- fix_categories %>% pull(category)
 
   # Filter by year given
   tb0 <- datain %>% filter(year == yr)
@@ -60,8 +59,8 @@ create_summary <- function(datain, yr) {
   tbcatsum1 <- tb0 %>% filter(!grepl("Transfer ", category)) %>%
     mutate(category = ifelse(value>0, "Total Income", "Total Outcome"))
   # Create total income and outcome fix category
-  tbcatsum1f <- tb0 %>% filter(category %in% fix_categories) %>%
-    mutate(category = ifelse(value>0, "Total Income Fix (F)", "Total Outcome Fix (F)"))
+  tbcatsum1f <- tb0 %>% filter(category %in% fix_categs) %>%
+    mutate(category = paste("Total", ifelse(value>0,"Income","Outcome"), "Fix (F)"))
   # Create saldo category
   tbsaldo0 <- tbcat_total %>% mutate(category = "Saldo")
   # Create saldo per account category
@@ -100,7 +99,7 @@ create_summary <- function(datain, yr) {
   maxavg <- max(abs(tball2$Average))
   tball3 <- tball2 %>%
     mutate(
-      Freq = ifelse(category %in% fix_categories, 12, Freq),
+      Freq = ifelse(category %in% fix_categs, 12, Freq),
       order = ifelse(Average < 0, -maxavg-Average, Average),
       order = ifelse(Average < 0 & 10 <= Freq, (-maxavg-Average)/10, order),
       order = ifelse(grepl("Total",category), -100*maxavg+Average, order),
@@ -109,7 +108,7 @@ create_summary <- function(datain, yr) {
       Total = ifelse(grepl("Saldo",category), "", Total),
       Average = ifelse(grepl("Saldo",category), "", sprintf("%.2f",Average)),
       category = gsub("^(Total|Saldo) ",">> \\1 ", category),
-      category = ifelse(category %in% fix_categories, paste(category, "(F)"), category)
+      category = ifelse(category %in% fix_categs, paste(category, "(F)"), category)
     ) %>%
     arrange(-order) %>%
     rename(Category = category) %>%

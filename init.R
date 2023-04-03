@@ -19,6 +19,7 @@ improvement_formatter <- formatter("span", style = x ~ style(
 )
 
 categories <- read_csv("categories.csv", show_col_types = FALSE)
+fix_categories <- read_csv("fix_categories.csv", show_col_types = FALSE)
 
 # Check function for valid income and expense values
 check_income_and_expense <- function(datain) {
