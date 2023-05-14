@@ -138,7 +138,7 @@ misscats <- tb %>% filter(is.na(category),is.na(suggested_category))
 if(nrow(misscats) > 0) {
   warning("Found blank category. Please check.", immediate. = TRUE)
   misscats %>%
-    select(payee, memo, account, value, category, suggested_category) %>%
+    select(payee, date, memo, account, value, category, suggested_category) %>%
     formattable()
 }
 
