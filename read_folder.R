@@ -1,10 +1,18 @@
-#path <- "/Users/vicky/Documents/celestial/finance/Banking/N26/obsolete"
-path <- "/Users/vicky/Documents/celestial/finance/Banking/Commerzbank"
+
+folder <- "N26"
+folder <- "Commerzbank"
+folder <- "Transferwise"
+
+banking_fullpath <- "/Users/vicky/Documents/celestial/finance/Banking"
+path <- file.path(banking_fullpath,folder)
 files <- list.files(path)
 csvfiles <- files[grepl("\\.csv$",files,ignore.case = TRUE)]
 
+separator <- ";"
+separator <- ","
+
 all0 <- Reduce(function(f0, fl) {
-  x <- read.csv(file.path(path,fl),sep = ";") %>% as_tibble %>% clean_names()
+  x <- read.csv(file.path(path,fl),sep = separator) %>% as_tibble %>% clean_names()
   y <- x %>% distinct()
   if (nrow(x) != nrow(y)) {
     warning("Found duplicate. Please check in csv file ", fl, immediate. = TRUE)
@@ -13,12 +21,10 @@ all0 <- Reduce(function(f0, fl) {
   else return(bind_rows(f0, x))
 }, csvfiles, tibble())
 
+# For N26
 all <- all0 %>%
-  mutate(
-    account_number = ifelse(is.na(account_number),"",account_number),
-    payment_reference = ifelse(payment_reference=="-","",payment_reference)
-  ) %>% 
-  select(-category) %>% distinct()
+  distinct() %>% 
+  arrange(date)
 
 # For Commerzbank
 all <- all0 %>%
@@ -29,13 +35,13 @@ all <- all0 %>%
   distinct() %>% 
   select(-Date)
 
+# For Wise
+all <- all0 %>%
+  mutate(Date = dmy(date)) %>% 
+  distinct() %>% 
+  arrange(Date) %>% 
+  select(-Date)
 
-#dataout = "data/n26.csv"
-dataout = "data/commerzbank.csv"
-write.csv(all, dataout)
-
-tb_n26c <- read_trans_file(file = "out/N26-transactions copy.xlsx", acc = "N26c", dateformat="%Y-%m-%d")
-
-v <- bind_rows(tb_n26, tb_n26c)
-w <- v %>% count(date, payee) %>% filter(n!=2,n!=4)
-w %>% inner_join(v) %>% formattable()
+outfolder <- "data/out"
+fileout = paste0(folder,".csv")
+write.csv(all, file.path(outfolder,fileout))
