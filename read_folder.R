@@ -2,17 +2,24 @@
 folder <- "N26"
 folder <- "Commerzbank"
 folder <- "Transferwise"
+folder <- "Barclaycard"
+folder <- "LBB-Amazon"
 
 banking_fullpath <- "/Users/vicky/Documents/celestial/finance/Banking"
 path <- file.path(banking_fullpath,folder)
 files <- list.files(path)
 csvfiles <- files[grepl("\\.csv$",files,ignore.case = TRUE)]
+xlsxfiles <- files[grepl("\\.xlsx$",files,ignore.case = TRUE)]
 
 separator <- ";"
 separator <- ","
 
+skiprows <- 0
+skiprows <- 1
+
 all0 <- Reduce(function(f0, fl) {
-  x <- read.csv(file.path(path,fl),sep = separator) %>% as_tibble %>% clean_names()
+  x <- read.csv(file.path(path,fl),sep = separator, skip = skiprows) %>%
+    as_tibble %>% clean_names()
   y <- x %>% distinct()
   if (nrow(x) != nrow(y)) {
     warning("Found duplicate. Please check in csv file ", fl, immediate. = TRUE)
@@ -40,6 +47,15 @@ all <- all0 %>%
   mutate(Date = dmy(date)) %>% 
   distinct() %>% 
   arrange(Date) %>% 
+  select(-Date)
+
+# For Amazon
+all <- all0 %>%
+  mutate(
+    Date = dmy(transaktionsdatum)
+  ) %>% 
+  arrange(Date) %>% 
+  distinct() %>% 
   select(-Date)
 
 outfolder <- "data/out"
