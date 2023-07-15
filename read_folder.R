@@ -1,28 +1,12 @@
+######################################
+# Read csv or xlsx files in folder
+# and combine them as one csv file
+######################################
 
-folder <- "N26"
-folder <- "Commerzbank"
-folder <- "Transferwise"
-folder <- "Barclaycard"
-folder <- "LBB-Amazon"
-folder <- "DeutscheBank"
-folder <- "Wuestenrot"
-
-banking_fullpath <- "/Users/vicky/Documents/celestial/finance/Banking"
-
-separator <- ";"
-separator <- ","
-
-skiprows <- 0
-skiprows <- 1
-skiprows <- 4
-skiprows <- 12
-
-encodingtype <- "latin1"
-encodingtype <- "UTF-8"
-encodingtype <- "unknown"
-
-read_folder <- function(folder, path, skiprows) {
-  fullpath <- file.path(path,folder)
+read_folder <- function(path, folder, skiprows=0, separator=",",
+                        encodingtype="unknown", fileencoding="") {
+  # find files in folder
+  fullpath <- file.path(path, folder)
   files <- list.files(fullpath)
   tblfiles <- files[grepl("\\.(csv|xlsx)$",files,ignore.case = TRUE)]
   if (length(tblfiles)==0) {
@@ -30,9 +14,10 @@ read_folder <- function(folder, path, skiprows) {
   } else {
     # combine all files in folder into one tibble
     all0 <- Reduce(function(f0, fl) {
+      print(paste("Read file", fl))
       if (grepl("csv$", fl, ignore.case = TRUE)) {
         x0 <- read.csv(file.path(fullpath,fl), sep = separator, skip = skiprows,
-                      encoding = encodingtype)
+                      encoding = encodingtype, fileEncoding = fileencoding)
       } else {
         x0 <- read_xlsx(file.path(fullpath,fl), skip = skiprows)
       }
@@ -46,88 +31,74 @@ read_folder <- function(folder, path, skiprows) {
       if (nrow(f0) == 0) return(x)
       else return(bind_rows(f0, x))
     }, tblfiles, tibble())
+    print(paste("Find #rows:", nrow(all0)))
     
     # remove duplicates
     all1 <- all0 %>% distinct()
-    return(all1)
+    print(paste("Unique #rows:", nrow(all1)))
+    
+    # sort by date
+    all2 <- sort_by_date(all1)
+    
+    # save as file
+    save_combined_file(all2, folder)
   }
 }
 
-all0 <- read_folder(folder, banking_fullpath, skiprows)
-
 sort_by_date <- function(df) {
   # Save as temporary date for sorting
-  datevars <- c("date", "buchungstag")
+  datevars <- c("date", "buchung", "buchungstag", "buchungsdatum_2",
+                "transaktionsdatum")
   for (d in datevars) {
     if (d %in% names(df)) {
       df["TempDate"] <- df[d]
+      print(paste("Sort by:", d))
     }
   }
   if ("TempDate" %in% names(df)) {
+    # check if any word in date variable
+    word_rgx <- "^[A-Za-z]+$"
+    grpl_word <- grepl(word_rgx, df$TempDate)
+    if (any(grpl_word)) {
+      # drop obs with word in date
+      print(paste("Drop obs with word in date variable:", df$TempDate[grpl_word]))
+      df <- df %>% filter(!grepl(word_rgx, TempDate))
+    }
     suppressWarnings({
       # Format as Date
       exdt <- pull(df,TempDate)[1]
       is_dmy <- !is.na(dmy(exdt))
       is_ymd <- !is.na(ymd(exdt))
-      if (is_dmy) {
-        df <- df %>% mutate(TempDate=dmy(TempDate))
-      } else if (is_ymd) {
-        df <- df %>% mutate(TempDate=ymd(TempDate))
-      } else {
-        warning("Unhandled date format. Please check date format ", exdt, immediate. = TRUE)
-      }
     })
+    if (is_dmy) {
+      df <- df %>% mutate(TempDate=dmy(TempDate))
+    } else if (is_ymd) {
+      df <- df %>% mutate(TempDate=ymd(TempDate))
+    } else {
+      warning("Unhandled date format. Please check date format ", exdt, immediate. = TRUE)
+    }
     df <- df %>% arrange(TempDate) %>% select(-TempDate)
   } else {
-    warning("Not date variable found. Please check.", immediate. = TRUE)
+    warning("No date variable found. Please check: ",
+            paste(names(df), collapse = " "), immediate. = TRUE)
   }
   return(df)
 }
-all <- sort_by_date(all0)
 
-# For N26
-all <- all0 %>%
-  arrange(date)
+save_combined_file <- function(df, filename) {
+  fileout = file.path("data", "out", paste0(filename,".csv"))
+  write.csv(df, fileout)
+  print(paste("Saved file:", fileout))
+}
 
-# For Commerzbank
-all <- all0 %>%
-  mutate(
-    Date = dmy(buchungstag)
-  ) %>% 
-  arrange(Date) %>% 
-  select(-Date)
 
-# For Wise
-all <- all0 %>%
-  mutate(Date = dmy(date)) %>% 
-  arrange(Date) %>% 
-  select(-Date)
+path <- "/Users/vicky/Documents/celestial/finance/Banking"
+read_folder(path, "Barclaycard", 12)
+read_folder(path, "Commerzbank", separator = ";")
+read_folder(path, "DeutscheBank", 4, separator = ";", encodingtype = "latin1")
+read_folder(path, "ING-DiBa", 13, separator = ";", encodingtype = "latin1",
+            fileencoding = "latin1")
+read_folder(path, "LBB-Amazon", 1, separator = ";")
+read_folder(path, "N26")
+read_folder(path, "Transferwise")
 
-# For Amazon
-all <- all0 %>%
-  mutate(
-    Date = dmy(transaktionsdatum)
-  ) %>% 
-  arrange(Date) %>% 
-  select(-Date)
-
-# For Barclay
-all <- all0 %>%
-  mutate(
-    Date = dmy(buchungsdatum_2)
-  ) %>% 
-  arrange(Date) %>% 
-  select(-Date)
-
-# For DB
-all <- all0 %>%
-  filter(buchungstag!="Kontostand") %>% 
-  mutate(
-    Date = dmy(buchungstag)
-  ) %>% 
-  arrange(Date) %>% 
-  select(-Date)
-
-outfolder <- "data/out"
-fileout = paste0(folder,".csv")
-write.csv(all, file.path(outfolder,fileout))
