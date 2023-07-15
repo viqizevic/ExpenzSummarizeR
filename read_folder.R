@@ -4,6 +4,7 @@ folder <- "Commerzbank"
 folder <- "Transferwise"
 folder <- "Barclaycard"
 folder <- "LBB-Amazon"
+folder <- "DeutscheBank"
 
 banking_fullpath <- "/Users/vicky/Documents/celestial/finance/Banking"
 path <- file.path(banking_fullpath,folder)
@@ -16,9 +17,19 @@ separator <- ","
 
 skiprows <- 0
 skiprows <- 1
+skiprows <- 4
+skiprows <- 5
+
+hdr <- TRUE
+hdr <- FALSE
+
+encodingtype <- "latin1"
+encodingtype <- "UTF-8"
+encodingtype <- "unknown"
 
 all0 <- Reduce(function(f0, fl) {
-  x <- read.csv(file.path(path,fl),sep = separator, skip = skiprows) %>%
+  x <- read.csv(file.path(path,fl),sep = separator, skip = skiprows,
+                header = hdr, encoding = encodingtype) %>%
     as_tibble %>% clean_names()
   y <- x %>% distinct()
   if (nrow(x) != nrow(y)) {
@@ -53,6 +64,16 @@ all <- all0 %>%
 all <- all0 %>%
   mutate(
     Date = dmy(transaktionsdatum)
+  ) %>% 
+  arrange(Date) %>% 
+  distinct() %>% 
+  select(-Date)
+
+# For DB
+all <- all0 %>%
+  filter(buchungstag!="Kontostand") %>% 
+  mutate(
+    Date = dmy(buchungstag)
   ) %>% 
   arrange(Date) %>% 
   distinct() %>% 
