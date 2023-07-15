@@ -5,12 +5,9 @@ folder <- "Transferwise"
 folder <- "Barclaycard"
 folder <- "LBB-Amazon"
 folder <- "DeutscheBank"
+folder <- "Wuestenrot"
 
 banking_fullpath <- "/Users/vicky/Documents/celestial/finance/Banking"
-path <- file.path(banking_fullpath,folder)
-files <- list.files(path)
-csvfiles <- files[grepl("\\.csv$",files,ignore.case = TRUE)]
-xlsxfiles <- files[grepl("\\.xlsx$",files,ignore.case = TRUE)]
 
 separator <- ";"
 separator <- ","
@@ -18,7 +15,7 @@ separator <- ","
 skiprows <- 0
 skiprows <- 1
 skiprows <- 4
-skiprows <- 5
+skiprows <- 12
 
 hdr <- TRUE
 hdr <- FALSE
@@ -27,21 +24,36 @@ encodingtype <- "latin1"
 encodingtype <- "UTF-8"
 encodingtype <- "unknown"
 
-all0 <- Reduce(function(f0, fl) {
-  x <- read.csv(file.path(path,fl),sep = separator, skip = skiprows,
-                header = hdr, encoding = encodingtype) %>%
-    as_tibble %>% clean_names()
-  y <- x %>% distinct()
-  if (nrow(x) != nrow(y)) {
-    warning("Found duplicate. Please check in csv file ", fl, immediate. = TRUE)
+read_folder <- function(folder, path, skiprows) {
+  fullpath <- file.path(path,folder)
+  files <- list.files(fullpath)
+  tblfiles <- files[grepl("\\.(csv|xlsx)$",files,ignore.case = TRUE)]
+  if (length(tblfiles)==0) {
+    warning("No csv or xlsx file found. Please check folder ", fullpath, immediate. = TRUE)
+  } else {
+    all0 <- Reduce(function(f0, fl) {
+      if (grepl("csv$", fl, ignore.case = TRUE)) {
+        x0 <- read.csv(file.path(fullpath,fl), sep = separator, skip = skiprows,
+                      header = hdr, encoding = encodingtype)
+      } else {
+        x0 <- read_xlsx(file.path(fullpath,fl), skip = skiprows)
+      }
+      x <- x0  %>% as_tibble %>% clean_names()
+      y <- x %>% distinct()
+      if (nrow(x) != nrow(y)) {
+        warning("Found duplicate. Please check in file ", fl, immediate. = TRUE)
+      }
+      if (nrow(f0) == 0) return(x)
+      else return(bind_rows(f0, x))
+    }, tblfiles, tibble())
+    return(all0 %>% distinct())
   }
-  if (nrow(f0) == 0) return(x)
-  else return(bind_rows(f0, x))
-}, csvfiles, tibble())
+}
+
+all0 <- read_folder(folder, banking_fullpath, skiprows)
 
 # For N26
 all <- all0 %>%
-  distinct() %>% 
   arrange(date)
 
 # For Commerzbank
@@ -50,13 +62,11 @@ all <- all0 %>%
     Date = dmy(buchungstag)
   ) %>% 
   arrange(Date) %>% 
-  distinct() %>% 
   select(-Date)
 
 # For Wise
 all <- all0 %>%
   mutate(Date = dmy(date)) %>% 
-  distinct() %>% 
   arrange(Date) %>% 
   select(-Date)
 
@@ -66,7 +76,6 @@ all <- all0 %>%
     Date = dmy(transaktionsdatum)
   ) %>% 
   arrange(Date) %>% 
-  distinct() %>% 
   select(-Date)
 
 # For DB
@@ -76,7 +85,6 @@ all <- all0 %>%
     Date = dmy(buchungstag)
   ) %>% 
   arrange(Date) %>% 
-  distinct() %>% 
   select(-Date)
 
 outfolder <- "data/out"
