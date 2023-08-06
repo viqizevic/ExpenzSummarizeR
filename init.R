@@ -170,7 +170,10 @@ tb %>% write_csv("cache/listing.csv")
   tb %>% filter(grepl("Sonstiges",memo),account=="LBB Amazon") %>% formattable()
   tb %>% filter(grepl("Reise",category)) %>% formattable()
   tb %>% filter(grepl("VIYU",memo)) %>% formattable()
-
+  tb %>% filter(grepl("Zurich Insurance",payee),year=="2022") %>% formattable()
+  tb %>% filter(grepl("Toreh|Pangalila",memo),year=="2022") %>% formattable()
+  tb %>% filter(grepl("Cece|Mama",category),year=="2022") %>% formattable()
+  
   # Print used suggested categories
   tb1 %>% filter(is.na(category)) %>% count(payee, memo, suggested_category) %>% formattable()
 }
