@@ -91,14 +91,13 @@ save_combined_file <- function(df, filename) {
   print(paste("Saved file:", fileout))
 }
 
-
-path <- "/Users/vicky/Documents/celestial/finance/Banking"
-read_folder(path, "Barclaycard", 12)
-read_folder(path, "Commerzbank", separator = ";")
-read_folder(path, "DeutscheBank", 4, separator = ";", encodingtype = "latin1")
-read_folder(path, "ING-DiBa", 13, separator = ";", encodingtype = "latin1",
-            fileencoding = "latin1")
-read_folder(path, "LBB-Amazon", 1, separator = ";")
-read_folder(path, "N26")
-read_folder(path, "Transferwise")
-
+.read_folders <- function() {
+  path <- "/Users/vicky/Documents/celestial/finance/Banking"
+  read_folder(path, "Barclaycard", 12)
+  read_folder(path, "Commerzbank", separator = ";")
+  read_folder(path, "DeutscheBank", 4, separator = ";", encodingtype = "latin1")
+  read_folder(path, "ING-DiBa", 13, separator = ";", fileencoding = "latin1")
+  read_folder(path, "LBB-Amazon", 1, separator = ";")
+  read_folder(path, "N26")
+  read_folder(path, "Transferwise")
+}
