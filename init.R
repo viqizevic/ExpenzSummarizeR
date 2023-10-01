@@ -58,8 +58,9 @@ read_trans_file <- function(folder = "data", file, acc,
       memo = ifelse(
         grepl("Tanzil", payee, ignore.case = TRUE)
         & (grepl("RINP|Tabungan", memo)
-        | memo == "-"),
-          paste(memo,iban), memo)
+        | memo == "-" ),
+          paste(memo,iban), memo),
+      memo = ifelse(is.na(memo),iban,memo)
     )
   }
   if(acc=="ING DiBa") {
@@ -130,7 +131,7 @@ tb <- tb1 %>% mutate(
 duplsgcats <- suggcats0 %>% dplyr::count(date, payee, memo, account, value) %>% filter(n!=1)
 if(nrow(duplsgcats) > 0) {
   warning("Duplicates found. Please check.", immediate. = TRUE)
-  duplsgcats %>% formattable()
+  duplsgcats %>% dplyr::left_join(suggcats0) %>% formattable()
 }
 
 
