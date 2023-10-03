@@ -100,7 +100,7 @@ sc_file <- paste("data", "set_categories.xlsx", sep="/")
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
 
 # Get suggested categories
-suggcats0 <- tb0 %>% full_join(sc_exl, by=character()) %>%
+suggcats0 <- tb0 %>% cross_join(sc_exl) %>%
   select(-"category", -"year", -"year_month", -"month", -"income", -"expense") %>%
   mutate(
     detect_payee = str_detect(payee, payee_pattern),
