@@ -20,7 +20,7 @@ get_monthly_saldo <- function(datasum, datain, yr) {
   accs <- dssaldo %>% count(category) %>% select(-n)
   ym <- dssaldo %>% count(year_month, month) %>% select(-n)
   # cross join to display all months and accounts
-  ymaccs <- ym %>% full_join(accs, by=character()) %>%
+  ymaccs <- ym %>% cross_join(accs) %>%
     left_join(dssaldo, by = c("year_month", "month", "category")) %>%
     mutate(sum=if_else(is.na(sum),0,sum))
   for (acc in accs$category) {
