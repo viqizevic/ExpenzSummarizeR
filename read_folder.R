@@ -23,6 +23,11 @@ read_folder <- function(path, folder, skiprows=0, separator=",",
       }
       x <- x0  %>% as_tibble %>% clean_names()
       
+      # Ensure betrag is a character column
+      column <- "betrag"
+      if (column %in% names(x)) {
+        x[[column]] <- as.character(x[[column]])
+      }
       # Ensure payee_account_number is a character column
       column <- "payee_account_number"
       if (column %in% names(x)) {
