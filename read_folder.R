@@ -22,6 +22,13 @@ read_folder <- function(path, folder, skiprows=0, separator=",",
         x0 <- read_xlsx(file.path(fullpath,fl), skip = skiprows)
       }
       x <- x0  %>% as_tibble %>% clean_names()
+      
+      # Ensure payee_account_number is a character column
+      column <- "payee_account_number"
+      if (column %in% names(x)) {
+        x[column] <- as.character(x[column])
+      }
+      
       # check if any duplicate
       y <- x %>% distinct()
       if (nrow(x) != nrow(y)) {
