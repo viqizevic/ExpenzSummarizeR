@@ -91,10 +91,11 @@ tb_trfwise <- read_trans_file(file = "Statement_Wise.xlsx", acc = "Wise", datefo
 tb_deutscb <- read_trans_file(file = "Kontoumsaetze_DB.xlsx", acc = "Deutsche Bank")
 tb_wstnrot <- read_trans_file(file = "Umsaetze_WSTR.xlsx", acc = "Wüstenrot")
 tb_mintos  <- read_trans_file(file = "Mintos-transactions.xlsx", acc = "Mintos", dateformat="%Y-%m-%d")
+tb_amex    <- read_trans_file(file = "Amex.xlsx", acc = "Amex", dateformat="%Y-%m-%d")
 
 # Combine as one tibble
 tb0 <- rbind(tb_barclay, tb_n26, tb_lbbamzn, tb_ingdiba, tb_commrzb,
-              tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos)
+              tb_trfwise, tb_deutscb, tb_wstnrot, tb_mintos, tb_amex)
 
 sc_file <- paste("data", "set_categories.xlsx", sep="/")
 sc_exl <- read_excel(sc_file) %>% as_tibble %>% clean_names
